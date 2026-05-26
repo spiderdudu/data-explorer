@@ -259,7 +259,7 @@ export default function ChatBIPage() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: '你好！我可以帮你查询和分析 Acme 的交易数据。你可以用自然语言提问，我会自动生成 SQL 并返回结果。',
+      content: '你好！我可以帮你查询和分析 Evo 的交易数据。你可以用自然语言提问，我会自动生成 SQL 并返回结果。',
     },
   ])
   const [input, setInput] = useState('')
@@ -310,7 +310,7 @@ export default function ChatBIPage() {
         <Text strong style={{ fontSize: 14 }}>Chat BI</Text>
         <Tag color="blue" style={{ fontSize: 10, marginLeft: 4 }}>Beta</Tag>
         <Text type="secondary" style={{ fontSize: 12, marginLeft: 4 }}>
-          基于 Acme 数据地图，用自然语言探索数据
+          基于 Evo 数据地图，用自然语言探索数据
         </Text>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           {['execution_ladder', 'account_position', 'lp_raw_quote'].map(t => (

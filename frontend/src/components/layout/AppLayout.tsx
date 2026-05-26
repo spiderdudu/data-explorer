@@ -99,7 +99,7 @@ export default function AppLayout() {
           {!collapsed && (
             <div>
               <Text strong style={{ fontSize: 13, display: 'block', lineHeight: '18px' }}>
-                Acme
+                Evo
               </Text>
               <Text type="secondary" style={{ fontSize: 10, lineHeight: '14px' }}>
                 Ontology Platform

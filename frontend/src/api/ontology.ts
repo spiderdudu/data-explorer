@@ -180,7 +180,7 @@ const MOCK_PROPERTIES: OntProperty[] = [
   { id: 28, aspectId: 11, typeId: 1, name: 'endpoint',        displayName: 'Endpoint',       dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1 },
   { id: 29, aspectId: 11, typeId: 1, name: 'auth_type',       displayName: '认证方式',       dataType: 'enum',    isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: 'api_key / oauth2 / none' },
   // Dataset — grpcMetadata (aspectId=54)
-  { id: 153,aspectId: 54, typeId: 1, name: 'service',         displayName: 'gRPC Service',   dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 acme.config.ConfigService' },
+  { id: 153,aspectId: 54, typeId: 1, name: 'service',         displayName: 'gRPC Service',   dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 evo.config.ConfigService' },
   { id: 154,aspectId: 54, typeId: 1, name: 'method',          displayName: 'gRPC Method',    dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 2, description: '如 All / GetSymbolConfig / GetPositions' },
   { id: 155,aspectId: 54, typeId: 1, name: 'request_payload', displayName: '请求 Payload',   dataType: 'json',    isRequired: false, isMulti: false, isSystem: true,  sortOrder: 3, description: '固定请求参数，如 {"instance_key":{"instance_id":"SGP"}}' },
   { id: 30, aspectId: 12, typeId: 5, name: 'event_type',    displayName: '事件类型',   dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'WAR / RATE_DECISION / NFP / CPI / GEOPOLITICAL / EARNINGS / OTHER' },
@@ -277,7 +277,7 @@ const MOCK_PROPERTIES: OntProperty[] = [
   // Action — grpcActionInfo 连接信息 (aspectId=46)
   { id: 132,aspectId: 46, typeId: 4,  name: 'host',    displayName: 'Host',           dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1 },
   { id: 133,aspectId: 46, typeId: 4,  name: 'port',    displayName: 'Port',           dataType: 'integer', isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 2 },
-  { id: 134,aspectId: 46, typeId: 4,  name: 'service', displayName: 'gRPC Service',   dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 3, description: '如 acme.config.ConfigService / acme.trade.TradeService' },
+  { id: 134,aspectId: 46, typeId: 4,  name: 'service', displayName: 'gRPC Service',   dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 3, description: '如 evo.config.ConfigService / evo.trade.TradeService' },
   { id: 135,aspectId: 46, typeId: 4,  name: 'method',  displayName: 'gRPC Method',    dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 4, description: '如 UpdateSymbolConfig / PlaceOrder / CancelOrder' },
   { id: 136,aspectId: 46, typeId: 4,  name: 'tls',     displayName: 'TLS',            dataType: 'boolean', isRequired: false, isMulti: false, isSystem: true,  sortOrder: 5, description: '是否启用 TLS，生产环境建议开启' },
   // Action — grpcActionInput 入参 (aspectId=47)
@@ -532,12 +532,12 @@ const MOCK_DATASETS: DatasetEntity[] = [
     platform: 's3', env: 'prod', status: 1, isSystem: false,
     currentVersion: 1, createdBy: 'ops_team',
     createdAt: '2025-04-01T08:00:00Z', updatedAt: '2025-04-01T08:00:00Z',
-    filePath: 's3://acme-ops/onboarding/client_onboarding_2025q1.xlsx',
+    filePath: 's3://evo-ops/onboarding/client_onboarding_2025q1.xlsx',
     freshness: 'request', frequency: 'n/a', rowCount: 48, sizeBytes: 2097152, retention: '永久',
     description: '2025 Q1 新客户开户申请表，Excel 格式，包含 KYC 信息和账户配置',
     owner: 'ops_team', team: 'Operations', steward: 'tom',
     tags: ['client', 'onboarding', 'excel', 'kyc'],
-    domainName: 'Trading', containerName: 'onboarding', instanceName: 'dev-acme-platform-backup',
+    domainName: 'Trading', containerName: 'onboarding', instanceName: 'dev-evo-platform-backup',
   },
   {
     id: 10, typeId: 1, typeName: 'Dataset',
@@ -546,12 +546,12 @@ const MOCK_DATASETS: DatasetEntity[] = [
     platform: 's3', env: 'prod', status: 1, isSystem: false,
     currentVersion: 1, createdBy: 'tom',
     createdAt: '2025-05-21T18:00:00Z', updatedAt: '2025-05-21T18:00:00Z',
-    filePath: 's3://acme-reports/pnl/daily_pnl_20250521.csv',
+    filePath: 's3://evo-reports/pnl/daily_pnl_20250521.csv',
     freshness: 'daily', frequency: '1d', rowCount: 320, sizeBytes: 1048576, retention: '1y',
     description: '每日盈亏汇总报告，CSV 格式，由 Airflow DAG 每日 EOD 生成',
     owner: 'tom', team: 'Trading', steward: 'tom',
     tags: ['pnl', 'report', 'csv', 'batch'],
-    domainName: 'Trading', containerName: 'statement', instanceName: 'dev-acme-platform-backup',
+    domainName: 'Trading', containerName: 'statement', instanceName: 'dev-evo-platform-backup',
   },
   // ── lake: 数据湖归档 ─────────────────────────────────────────────────────────
   {
@@ -561,12 +561,12 @@ const MOCK_DATASETS: DatasetEntity[] = [
     platform: 's3', env: 'prod', status: 1, isSystem: false,
     currentVersion: 1, createdBy: 'tom',
     createdAt: '2025-03-01T08:00:00Z', updatedAt: '2025-05-01T00:00:00Z',
-    filePath: 's3://dev-acme-platform-lake/warehouse/ladder/',
+    filePath: 's3://dev-evo-platform-lake/warehouse/ladder/',
     freshness: 'daily', frequency: '1d', rowCount: 500000000, sizeBytes: 107374182400, retention: '永久',
     description: 'Ladder 历史归档数据，Parquet 格式，按日期分区，由 Spark 作业每日从 TimescaleDB 导出',
     owner: 'alice', team: 'Market', steward: 'alice',
     tags: ['ladder', 'archive', 'parquet'],
-    domainName: 'Market', containerName: 'warehouse/ladder', instanceName: 'dev-acme-platform-lake',
+    domainName: 'Market', containerName: 'warehouse/ladder', instanceName: 'dev-evo-platform-lake',
   },
   // ── api: gRPC 查询数据集 ─────────────────────────────────────────────────────
   {
@@ -581,7 +581,7 @@ const MOCK_DATASETS: DatasetEntity[] = [
     owner: 'bob', team: 'System', steward: 'bob',
     tags: ['config', 'snapshot'],
     domainName: 'System', containerName: 'Configurator', instanceName: 'DataService',
-    grpcService: 'acme.config.ConfigService', grpcMethod: 'All', grpcPayload: '{}',
+    grpcService: 'evo.config.ConfigService', grpcMethod: 'All', grpcPayload: '{}',
   },
   {
     id: 14, typeId: 1, typeName: 'Dataset',
@@ -595,7 +595,7 @@ const MOCK_DATASETS: DatasetEntity[] = [
     owner: 'tom', team: 'Trading', steward: 'tom',
     tags: ['position', 'trading'],
     domainName: 'Trading', containerName: 'Trader', instanceName: 'DataService',
-    grpcService: 'acme.trade.TradeService', grpcMethod: 'GetPositions', grpcPayload: '{"account_id":""}',
+    grpcService: 'evo.trade.TradeService', grpcMethod: 'GetPositions', grpcPayload: '{"account_id":""}',
   },
   {
     id: 15, typeId: 1, typeName: 'Dataset',
@@ -609,7 +609,7 @@ const MOCK_DATASETS: DatasetEntity[] = [
     owner: 'tom', team: 'Trading', steward: 'tom',
     tags: ['strategy', 'trades', 'attribution'],
     domainName: 'Trading', containerName: 'StrategyService', instanceName: 'DataService',
-    grpcService: 'acme.strategy.StrategyService', grpcMethod: 'ListStrategyTrades', grpcPayload: '{"strategy_id":"","from":"","to":""}',
+    grpcService: 'evo.strategy.StrategyService', grpcMethod: 'ListStrategyTrades', grpcPayload: '{"strategy_id":"","from":"","to":""}',
   },
   {
     id: 16, typeId: 1, typeName: 'Dataset',
@@ -623,7 +623,7 @@ const MOCK_DATASETS: DatasetEntity[] = [
     owner: 'tom', team: 'Trading', steward: 'tom',
     tags: ['pnl', 'analytics', 'report'],
     domainName: 'Trading', containerName: 'default', instanceName: 'Analytics',
-    grpcService: 'acme.analytics.ReportService', grpcMethod: 'GetPnlSummary', grpcPayload: '{"account_id":"","granularity":"DAILY","from":"","to":""}',
+    grpcService: 'evo.analytics.ReportService', grpcMethod: 'GetPnlSummary', grpcPayload: '{"account_id":"","granularity":"DAILY","from":"","to":""}',
   },
   // ── api: 外部数据源 ──────────────────────────────────────────────────────────
   {
@@ -806,11 +806,11 @@ const MOCK_INSTANCES: OntEntity[] = [
   { id: 34, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(mq,mq-prod-ld,prod)', name: 'mq-prod-ld', displayName: 'MQ (LD)', platform: 'mq', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: 'MQ 伦敦实例，instance_key=LD，eu-west-2', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
   { id: 35, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(mq,mq-prod-sg,prod)', name: 'mq-prod-sg', displayName: 'MQ (SG)', platform: 'mq', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: 'MQ 新加坡实例，instance_key=SG，ap-southeast-1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
   // S3
-  { id: 36, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(s3,dev-acme-platform-backup,prod)', name: 'dev-acme-platform-backup', displayName: 'dev-acme-platform-backup', platform: 's3', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: '数据备份桶，存储数据库备份、报告文件、客户文件等', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
-  { id: 55, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(s3,dev-acme-platform-lake,prod)',   name: 'dev-acme-platform-lake',   displayName: 'dev-acme-platform-lake',   platform: 's3', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: '数据湖桶，存储 warehouse/rawdata 等结构化归档数据', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+  { id: 36, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(s3,dev-evo-platform-backup,prod)', name: 'dev-evo-platform-backup', displayName: 'dev-evo-platform-backup', platform: 's3', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: '数据备份桶，存储数据库备份、报告文件、客户文件等', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+  { id: 55, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(s3,dev-evo-platform-lake,prod)',   name: 'dev-evo-platform-lake',   displayName: 'dev-evo-platform-lake',   platform: 's3', env: 'prod', isSystem: true, status: 1, currentVersion: 1, description: '数据湖桶，存储 warehouse/rawdata 等结构化归档数据', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
   // gRPC 服务实例
-  { id: 37, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(grpc,acme-dataservice,prod)',             name: 'acme-dataservice',   displayName: 'DataService', platform: 'grpc',  env: 'prod', isSystem: true, status: 1, currentVersion: 3, description: '核心 gRPC DataService，提供 Configurator / Trader / StrategyService 三大服务，eu-west-2', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  { id: 38, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(grpc,acme-analytics,prod)',               name: 'acme-analytics',     displayName: 'Analytics',   platform: 'grpc',  env: 'prod', isSystem: false, status: 1, currentVersion: 1, description: '分析项目 gRPC 服务，提供 ReportService / AttributionService 接口，支持 PnL 报告生成和策略归因分析，eu-west-2', createdAt: '2025-06-01T00:00:00Z', updatedAt: '2025-06-01T00:00:00Z' },
+  { id: 37, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(grpc,evo-dataservice,prod)',             name: 'evo-dataservice',   displayName: 'DataService', platform: 'grpc',  env: 'prod', isSystem: true, status: 1, currentVersion: 3, description: '核心 gRPC DataService，提供 Configurator / Trader / StrategyService 三大服务，eu-west-2', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 38, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(grpc,evo-analytics,prod)',               name: 'evo-analytics',     displayName: 'Analytics',   platform: 'grpc',  env: 'prod', isSystem: false, status: 1, currentVersion: 1, description: '分析项目 gRPC 服务，提供 ReportService / AttributionService 接口，支持 PnL 报告生成和策略归因分析，eu-west-2', createdAt: '2025-06-01T00:00:00Z', updatedAt: '2025-06-01T00:00:00Z' },
   // 外部 API
   { id: 39, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(reuters,reuters-eikon-prod,prod)',            name: 'reuters-eikon-prod',    displayName: 'Reuters Eikon', platform: 'reuters',    env: 'prod', isSystem: false, status: 1, currentVersion: 1, description: 'Reuters Eikon API，提供外汇即期汇率和新闻事件实时数据', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
   { id: 40, typeId: 11, typeName: 'Instance', urn: 'urn:xs:Instance:(bloomberg,bloomberg-api-prod,prod)',          name: 'bloomberg-api-prod',    displayName: 'Bloomberg API', platform: 'bloomberg',  env: 'prod', isSystem: false, status: 1, currentVersion: 1, description: 'Bloomberg API，提供宏观经济日历和市场数据', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
@@ -855,9 +855,9 @@ const CONTAINER_LINKS: Array<{ sourceId: number; targetId: number }> = [
   { sourceId: 52, targetId: 34 }, // markup → mq-prod-ld
   { sourceId: 53, targetId: 34 }, // smart-order-router → mq-prod-ld
   { sourceId: 54, targetId: 34 }, // position-manager → mq-prod-ld
-  { sourceId: 46, targetId: 36 }, // statement → dev-acme-platform-backup
-  { sourceId: 47, targetId: 36 }, // onboarding → dev-acme-platform-backup
-  { sourceId: 56, targetId: 55 }, // warehouse/ladder → dev-acme-platform-lake
+  { sourceId: 46, targetId: 36 }, // statement → dev-evo-platform-backup
+  { sourceId: 47, targetId: 36 }, // onboarding → dev-evo-platform-backup
+  { sourceId: 56, targetId: 55 }, // warehouse/ladder → dev-evo-platform-lake
   { sourceId: 48, targetId: 37 }, // Configurator → DataService
   { sourceId: 49, targetId: 37 }, // Trader → DataService
   { sourceId: 50, targetId: 37 }, // StrategyService → DataService

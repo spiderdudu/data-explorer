@@ -39,8 +39,8 @@ export default function ContainersPage() {
     'public-sg':  instanceMap.get('ladder-db-prod-sg')!,
     'LD':         instanceMap.get('mq-prod-ld')!,
     'SG':         instanceMap.get('mq-prod-sg')!,
-    'reports':    instanceMap.get('acme-s3-prod')!,
-    'onboarding': instanceMap.get('acme-s3-prod')!,
+    'reports':    instanceMap.get('evo-s3-prod')!,
+    'onboarding': instanceMap.get('evo-s3-prod')!,
   }
 
   const columns: ColumnsType<OntEntity> = [
