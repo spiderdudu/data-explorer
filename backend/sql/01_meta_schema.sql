@@ -1,4 +1,4 @@
--- XSyphon Ontology — meta schema DDL
+-- Evo Ontology Platform — meta schema DDL
 -- 执行顺序：本文件 → 02_init_data.sql
 
 CREATE SCHEMA IF NOT EXISTS meta;
@@ -12,6 +12,7 @@ END;
 $$;
 
 -- ── ont_type ──────────────────────────────────────────────────────────────────
+-- 本体对象类型，如 Dataset / Instance / Strategy / Metric
 CREATE TABLE meta.ont_type (
     id           BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name         VARCHAR(100) NOT NULL,
@@ -24,7 +25,7 @@ CREATE TABLE meta.ont_type (
     updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT uq_ont_type_name UNIQUE (name)
 );
-COMMENT ON TABLE  meta.ont_type           IS '本体对象类型，如 MarketEvent、Quote、Client、Domain、Container';
+COMMENT ON TABLE  meta.ont_type           IS '本体对象类型，如 Dataset、Instance、Strategy、Metric';
 COMMENT ON COLUMN meta.ont_type.is_system IS 'true=系统内置，不允许删除，只能 deprecated';
 COMMENT ON COLUMN meta.ont_type.status    IS '1=正常使用；0=已废弃，不允许新建实例';
 
@@ -32,56 +33,73 @@ CREATE TRIGGER trg_ont_type_updated_at
     BEFORE UPDATE ON meta.ont_type
     FOR EACH ROW EXECUTE FUNCTION meta.set_updated_at();
 
--- ── ont_entity ────────────────────────────────────────────────────────────────
-CREATE TABLE meta.ont_entity (
-    id              BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    type_id         BIGINT       NOT NULL REFERENCES meta.ont_type(id),
-    urn             VARCHAR(500) NOT NULL,
-    name            VARCHAR(100) NOT NULL,
-    display_name    VARCHAR(200),
-    platform        VARCHAR(100) NOT NULL DEFAULT 'xsyphon',
-    env             VARCHAR(20)  NOT NULL DEFAULT 'prod'
-                                 CHECK (env IN ('prod','uat','dev')),
-    description     VARCHAR(1000),
-    is_system       BOOLEAN      NOT NULL DEFAULT false,
-    status          SMALLINT     NOT NULL DEFAULT 1 CHECK (status IN (1,0)),
-    current_version INTEGER      NOT NULL DEFAULT 0,
-    created_by      VARCHAR(100),
-    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    CONSTRAINT uq_ont_entity_urn  UNIQUE (urn),
-    CONSTRAINT uq_ont_entity_name UNIQUE (type_id, platform, name, env)
-);
-COMMENT ON COLUMN meta.ont_entity.urn             IS 'URN 格式：urn:xs:{type}:({platform},{name},{env})';
-COMMENT ON COLUMN meta.ont_entity.platform        IS '数据来源平台，如 xsyphon / reuters / bloomberg';
-COMMENT ON COLUMN meta.ont_entity.env             IS '环境：prod / uat / dev';
-COMMENT ON COLUMN meta.ont_entity.current_version IS '属性值版本号，每次变更原子递增';
-
-CREATE INDEX idx_ont_entity_type ON meta.ont_entity(type_id);
-CREATE INDEX idx_ont_entity_urn  ON meta.ont_entity(urn);
-
-CREATE TRIGGER trg_ont_entity_updated_at
-    BEFORE UPDATE ON meta.ont_entity
-    FOR EACH ROW EXECUTE FUNCTION meta.set_updated_at();
-
--- ── ont_aspect ────────────────────────────────────────────────────────────────
-CREATE TABLE meta.ont_aspect (
+-- ── ont_classifier ────────────────────────────────────────────────────────────
+-- 分类器定义，决定实体适用哪些专属 Aspect
+-- 例：platform / strategy_type / action_type / event_type / container_type
+CREATE TABLE meta.ont_classifier (
     id           BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    type_id      BIGINT       NOT NULL REFERENCES meta.ont_type(id),
     name         VARCHAR(100) NOT NULL,
     display_name VARCHAR(200),
     description  VARCHAR(1000),
-    is_system    BOOLEAN      NOT NULL DEFAULT false,
-    sort_order   INTEGER      NOT NULL DEFAULT 0,
-    status       SMALLINT     NOT NULL DEFAULT 1 CHECK (status IN (1,0)),
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    CONSTRAINT uq_ont_aspect_name UNIQUE (type_id, name)
+    CONSTRAINT uq_ont_classifier_name UNIQUE (name)
 );
-COMMENT ON TABLE  meta.ont_aspect         IS '属性分组，对应 DataHub Aspect，同组属性原子更新';
-COMMENT ON COLUMN meta.ont_aspect.type_id IS '归属对象类型';
+COMMENT ON TABLE meta.ont_classifier IS '分类器定义，如 platform / strategy_type / container_type，决定实体适用哪些专属 Aspect';
 
-CREATE INDEX idx_ont_aspect_type ON meta.ont_aspect(type_id);
+CREATE TRIGGER trg_ont_classifier_updated_at
+    BEFORE UPDATE ON meta.ont_classifier
+    FOR EACH ROW EXECUTE FUNCTION meta.set_updated_at();
+
+-- ── ont_classifier_value ──────────────────────────────────────────────────────
+-- 分类器的具体取值，如 platform 下的 postgresql / timescaledb / grpc
+CREATE TABLE meta.ont_classifier_value (
+    id            BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    classifier_id BIGINT       NOT NULL REFERENCES meta.ont_classifier(id),
+    name          VARCHAR(100) NOT NULL,
+    display_name  VARCHAR(200),
+    category      VARCHAR(100),           -- 二级分类，如 database / stream / file / api
+    description   VARCHAR(1000),
+    is_system     BOOLEAN      NOT NULL DEFAULT false,
+    status        SMALLINT     NOT NULL DEFAULT 1 CHECK (status IN (1,0)),
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_ont_classifier_value UNIQUE (classifier_id, name)
+);
+COMMENT ON TABLE  meta.ont_classifier_value               IS '分类器取值，如 postgresql / timescaledb / grpc / TrendFollowing';
+COMMENT ON COLUMN meta.ont_classifier_value.classifier_id IS '所属分类器';
+COMMENT ON COLUMN meta.ont_classifier_value.category      IS '二级分类，如 platform 下的 database/stream/file/api';
+
+CREATE INDEX idx_ont_classifier_value_classifier ON meta.ont_classifier_value(classifier_id);
+
+CREATE TRIGGER trg_ont_classifier_value_updated_at
+    BEFORE UPDATE ON meta.ont_classifier_value
+    FOR EACH ROW EXECUTE FUNCTION meta.set_updated_at();
+
+-- ── ont_aspect ────────────────────────────────────────────────────────────────
+-- 属性分组，对应 DataHub Aspect，同组属性原子更新
+-- classifier_value_id IS NULL = 通用 Aspect（所有实例适用）
+-- classifier_value_id IS NOT NULL = 专属 Aspect（仅该分类值的实例适用）
+CREATE TABLE meta.ont_aspect (
+    id                    BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    type_id               BIGINT       NOT NULL REFERENCES meta.ont_type(id),
+    classifier_value_id   BIGINT       REFERENCES meta.ont_classifier_value(id),
+    name                  VARCHAR(100) NOT NULL,
+    display_name          VARCHAR(200),
+    description           VARCHAR(1000),
+    is_system             BOOLEAN      NOT NULL DEFAULT false,
+    sort_order            INTEGER      NOT NULL DEFAULT 0,
+    status                SMALLINT     NOT NULL DEFAULT 1 CHECK (status IN (1,0)),
+    created_at            TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_ont_aspect_name UNIQUE (type_id, classifier_value_id, name)
+);
+COMMENT ON TABLE  meta.ont_aspect                          IS '属性分组，同组属性原子更新';
+COMMENT ON COLUMN meta.ont_aspect.type_id                  IS '归属对象类型';
+COMMENT ON COLUMN meta.ont_aspect.classifier_value_id      IS 'NULL=通用 Aspect；非 NULL=仅对该分类值的实体生效';
+
+CREATE INDEX idx_ont_aspect_type       ON meta.ont_aspect(type_id);
+CREATE INDEX idx_ont_aspect_classifier ON meta.ont_aspect(classifier_value_id) WHERE classifier_value_id IS NOT NULL;
 
 CREATE TRIGGER trg_ont_aspect_updated_at
     BEFORE UPDATE ON meta.ont_aspect
@@ -113,11 +131,9 @@ CREATE TABLE meta.ont_property (
     CONSTRAINT uq_ont_property_name UNIQUE (aspect_id, name),
     CONSTRAINT chk_ont_property_ref CHECK (data_type != 'ref' OR ref_type_id IS NOT NULL)
 );
-COMMENT ON COLUMN meta.ont_property.aspect_id   IS '归属 Aspect';
-COMMENT ON COLUMN meta.ont_property.type_id     IS '冗余字段，类型级属性填入对应 type_id，实例级属性为 NULL';
 COMMENT ON COLUMN meta.ont_property.data_type   IS 'string|integer|decimal|boolean|date|datetime|enum|ref|json';
 COMMENT ON COLUMN meta.ont_property.ref_type_id IS 'data_type=ref 时指向的对象类型';
-COMMENT ON COLUMN meta.ont_property.is_multi    IS '是否允许多值';
+COMMENT ON COLUMN meta.ont_property.is_multi    IS '是否允许多值，多值用逗号分隔存储';
 
 CREATE INDEX idx_ont_property_aspect ON meta.ont_property(aspect_id);
 CREATE INDEX idx_ont_property_type   ON meta.ont_property(type_id) WHERE type_id IS NOT NULL;
@@ -139,6 +155,38 @@ CREATE TABLE meta.ont_property_enum (
 );
 
 CREATE INDEX idx_ont_enum_property ON meta.ont_property_enum(property_id);
+
+-- ── ont_entity ────────────────────────────────────────────────────────────────
+CREATE TABLE meta.ont_entity (
+    id                  BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    type_id             BIGINT       NOT NULL REFERENCES meta.ont_type(id),
+    classifier_value_id BIGINT       REFERENCES meta.ont_classifier_value(id),
+    urn                 VARCHAR(500) NOT NULL,
+    name                VARCHAR(100) NOT NULL,
+    display_name        VARCHAR(200),
+    env                 VARCHAR(20)  NOT NULL DEFAULT 'prod'
+                                     CHECK (env IN ('prod','uat','dev')),
+    description         VARCHAR(1000),
+    is_system           BOOLEAN      NOT NULL DEFAULT false,
+    status              SMALLINT     NOT NULL DEFAULT 1 CHECK (status IN (1,0)),
+    current_version     INTEGER      NOT NULL DEFAULT 0,
+    created_by          VARCHAR(100),
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_ont_entity_urn  UNIQUE (urn),
+    CONSTRAINT uq_ont_entity_name UNIQUE (type_id, classifier_value_id, name, env)
+);
+COMMENT ON COLUMN meta.ont_entity.urn                  IS 'URN 格式：urn:evo:{type}:({classifier_value},{name},{env})';
+COMMENT ON COLUMN meta.ont_entity.classifier_value_id  IS '实体所属分类值，如 Instance 的 platform=postgresql，Strategy 的 strategy_type=TrendFollowing';
+COMMENT ON COLUMN meta.ont_entity.current_version      IS '属性值版本号，每次变更原子递增';
+
+CREATE INDEX idx_ont_entity_type       ON meta.ont_entity(type_id);
+CREATE INDEX idx_ont_entity_classifier ON meta.ont_entity(classifier_value_id) WHERE classifier_value_id IS NOT NULL;
+CREATE INDEX idx_ont_entity_urn        ON meta.ont_entity(urn);
+
+CREATE TRIGGER trg_ont_entity_updated_at
+    BEFORE UPDATE ON meta.ont_entity
+    FOR EACH ROW EXECUTE FUNCTION meta.set_updated_at();
 
 -- ── ont_link_type ─────────────────────────────────────────────────────────────
 CREATE TABLE meta.ont_link_type (
@@ -269,11 +317,7 @@ CREATE TRIGGER trg_upstream_lineage_updated_at
 CREATE TABLE meta.ont_field_lineage (
     id                  BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     upstream_lineage_id BIGINT       NOT NULL REFERENCES meta.ont_upstream_lineage(id),
-    upstream_type       VARCHAR(10)  NOT NULL DEFAULT 'FIELD'
-                                     CHECK (upstream_type IN ('FIELD','FIELD_SET')),
     upstream_fields     JSONB        NOT NULL,
-    downstream_type     VARCHAR(10)  NOT NULL DEFAULT 'FIELD'
-                                     CHECK (downstream_type IN ('FIELD','FIELD_SET')),
     downstream_fields   JSONB        NOT NULL,
     transform_op        VARCHAR(500),
     confidence          NUMERIC(3,2) NOT NULL DEFAULT 1.00
@@ -282,27 +326,6 @@ CREATE TABLE meta.ont_field_lineage (
 );
 
 CREATE INDEX idx_field_lineage_upstream ON meta.ont_field_lineage(upstream_lineage_id);
-
--- ── ont_action_param ──────────────────────────────────────────────────────────
-CREATE TABLE meta.ont_action_param (
-    id            BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    entity_id     BIGINT       NOT NULL REFERENCES meta.ont_entity(id),
-    param_type    VARCHAR(10)  NOT NULL CHECK (param_type IN ('input','output')),
-    name          VARCHAR(100) NOT NULL,
-    display_name  VARCHAR(200),
-    data_type     VARCHAR(50)  NOT NULL
-                               CHECK (data_type IN (
-                                   'string','integer','decimal','boolean',
-                                   'date','datetime','enum','ref','json'
-                               )),
-    is_required   BOOLEAN      NOT NULL DEFAULT false,
-    default_value VARCHAR(500),
-    sort_order    INTEGER      NOT NULL DEFAULT 0,
-    description   VARCHAR(1000),
-    CONSTRAINT uq_action_param UNIQUE (entity_id, param_type, name)
-);
-
-CREATE INDEX idx_action_param_entity ON meta.ont_action_param(entity_id);
 
 -- ── ont_audit_log ─────────────────────────────────────────────────────────────
 CREATE TABLE meta.ont_audit_log (
@@ -320,7 +343,6 @@ CREATE TABLE meta.ont_audit_log (
 );
 COMMENT ON COLUMN meta.ont_audit_log.entity_id IS '操作关联的实体，如 MarketEvent 实例';
 COMMENT ON COLUMN meta.ont_audit_log.action_id IS '触发的 Action 实体实例';
-COMMENT ON COLUMN meta.ont_audit_log.status    IS 'pending|running|done|failed|ignored';
 
 CREATE INDEX idx_audit_log_entity ON meta.ont_audit_log(entity_id);
 CREATE INDEX idx_audit_log_action ON meta.ont_audit_log(action_id);

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Row, Col, Card, Tag, Typography, Space, Tooltip, Collapse, Table, Empty, Segmented, Badge } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { ontologyApi } from '@/api/ontology'
-import type { OntAspect, OntDimension, OntProperty, OntType } from '@/types/ontology'
+import type { OntAspect, OntClassifierValue, OntProperty, OntType } from '@/types/ontology'
 
 const { Text, Title, Paragraph } = Typography
 
@@ -60,7 +60,7 @@ const PROP_COLUMNS: ColumnsType<OntProperty> = [
 
 // ── 平台卡片 ──────────────────────────────────────────────────────────────────
 function PlatformCard({ platform, aspects, properties, types }: {
-  platform: OntDimension
+  platform: OntClassifierValue
   aspects: OntAspect[]
   properties: OntProperty[]
   types: OntType[]
@@ -144,7 +144,7 @@ function PlatformCard({ platform, aspects, properties, types }: {
 export default function PlatformsPage() {
   const [group, setGroup] = useState<'system' | 'custom'>('system')
 
-  const { data: platforms, isLoading: pLoading } = useQuery({ queryKey: ['dimensions', 'platform'],   queryFn: () => ontologyApi.getDimensions('platform') })
+  const { data: platforms, isLoading: pLoading } = useQuery({ queryKey: ['dimensions', 'platform'],   queryFn: () => ontologyApi.getClassifierValues('platform') })
   const { data: aspects,   isLoading: aLoading } = useQuery({ queryKey: ['aspects'],     queryFn: () => ontologyApi.getAspects() })
   const { data: properties                      } = useQuery({ queryKey: ['properties'], queryFn: () => ontologyApi.getProperties() })
   const { data: types                           } = useQuery({ queryKey: ['types'],      queryFn: () => ontologyApi.getTypes() })

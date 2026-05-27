@@ -194,7 +194,7 @@ export default function DatasetList() {
   const [envFilter, setEnvFilter]         = useState<string[]>([])
 
   const { data: stats }     = useQuery({ queryKey: ['datasetStats'],          queryFn: () => ontologyApi.getDatasetStats() })
-  const { data: platforms } = useQuery({ queryKey: ['dimensions', 'platform'], queryFn: () => ontologyApi.getDimensions('platform') })
+  const { data: platforms } = useQuery({ queryKey: ['dimensions', 'platform'], queryFn: () => ontologyApi.getClassifierValues('platform') })
   const { data: domains }   = useQuery({ queryKey: ['domains'],                queryFn: () => ontologyApi.getDomains() })
 
   // 每次过滤条件变化都重新请求（多选用第一个值，后端接入后改为数组传参）

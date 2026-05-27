@@ -8,11 +8,13 @@ import {
   DatabaseOutlined, ThunderboltOutlined, UserOutlined,
   AccountBookOutlined, BarChartOutlined, ApartmentOutlined,
   AppstoreOutlined, ContainerOutlined, BulbOutlined,
-  RiseOutlined, LockOutlined,
+  RiseOutlined, LockOutlined, ApiOutlined, FundOutlined,
+  TagsOutlined, RobotOutlined, ToolOutlined, ExperimentOutlined,
+  MonitorOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { ontologyApi } from '@/api/ontology'
-import type { OntAspect, OntProperty, OntType } from '@/types/ontology'
+import type { OntAspect, OntClassifierValue, OntProperty, OntType } from '@/types/ontology'
 
 const { Text, Title, Paragraph } = Typography
 
@@ -21,13 +23,20 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   Dataset:     <DatabaseOutlined />,
   Domain:      <AppstoreOutlined />,
   Container:   <ContainerOutlined />,
-  Action:      <BulbOutlined />,
+  Action:      <ApiOutlined />,
   MarketEvent: <ThunderboltOutlined />,
   Quote:       <RiseOutlined />,
   Client:      <UserOutlined />,
   Account:     <AccountBookOutlined />,
   Position:    <BarChartOutlined />,
   Strategy:    <ApartmentOutlined />,
+  Instance:    <DatabaseOutlined />,
+  Metric:      <FundOutlined />,
+  Agent:       <RobotOutlined />,
+  Skill:       <BulbOutlined />,
+  Tool:        <ToolOutlined />,
+  EvalRun:     <ExperimentOutlined />,
+  AgentTrace:  <MonitorOutlined />,
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -41,6 +50,13 @@ const TYPE_COLOR: Record<string, string> = {
   Account:     '#2f54eb',
   Position:    '#f5222d',
   Strategy:    '#08979c',
+  Instance:    '#531dab',
+  Metric:      '#d4380d',
+  Agent:       '#1677ff',
+  Skill:       '#722ed1',
+  Tool:        '#fa8c16',
+  EvalRun:     '#13c2c2',
+  AgentTrace:  '#52c41a',
 }
 
 const DATA_TYPE_COLOR: Record<string, string> = {
@@ -123,10 +139,10 @@ function TypeCard({ type, aspects, properties }: {
 }) {
   const color = TYPE_COLOR[type.name] ?? '#8c8c8c'
   const icon  = TYPE_ICON[type.name]
-  const typeAspects = aspects.filter(a => a.typeId === type.id && !a.dimensionId)
+  const typeAspects = aspects.filter(a => a.typeId === type.id && !a.classifierValueId)
   const propCount   = properties.filter(p => {
     const a = aspects.find(a => a.id === p.aspectId)
-    return a && a.typeId === type.id && !a.dimensionId
+    return a && a.typeId === type.id && !a.classifierValueId
   }).length
 
   const collapseItems = typeAspects.map(aspect => {

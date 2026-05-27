@@ -1,13 +1,17 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
-  Typography, Tag, Space, Tabs, Timeline, Descriptions,
-  Badge, Progress, Divider, Empty, Alert,
+  Typography, Tag, Space, Tabs, Timeline,
+  Badge, Divider, Empty, Alert, Input, List,
+  Segmented, Tooltip,
 } from 'antd'
 import {
   RobotOutlined, ThunderboltOutlined, WarningOutlined,
-  CheckCircleOutlined, ClockCircleOutlined, FallOutlined,
-  RiseOutlined, ToolOutlined, DatabaseOutlined,
+  CheckCircleOutlined, ClockCircleOutlined,
+  ToolOutlined, SearchOutlined,
 } from '@ant-design/icons'
+import { ontologyApi } from '@/api/ontology'
+import type { OntEntity } from '@/types/ontology'
 
 const { Text, Title, Paragraph } = Typography
 
@@ -362,12 +366,124 @@ function AttributionDetail({ item }: { item: Attribution }) {
   )
 }
 
+// ── 策略列表 Tab ──────────────────────────────────────────────────────────────
+
+const STRATEGY_TYPE_LABEL: Record<string, string> = {
+  TrendFollowing: '趋势跟踪', MeanReversion: '均值回归', Arbitrage: '套利',
+  MarketMaking: '做市', EventDriven: '事件驱动', Execution: '执行算法',
+}
+
+const ENV_COLOR: Record<string, string> = { prod: 'green', uat: 'orange', dev: 'default' }
+
+function StrategyItem({ strategy }: { strategy: OntEntity }) {
+  const cfg = { color: STRATEGY_TYPE_COLOR[strategy.platform] ?? '#8c8c8c' }
+  const typeLabel = STRATEGY_TYPE_LABEL[strategy.platform] ?? strategy.platform
+  return (
+    <List.Item style={{ display: 'block', padding: '12px 16px', cursor: 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <RobotOutlined style={{ color: cfg.color, fontSize: 16, flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Space size={6} wrap>
+            <Typography.Text strong style={{ fontSize: 14 }}>{strategy.displayName ?? strategy.name}</Typography.Text>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>({strategy.name})</Typography.Text>
+            <Tag color={STRATEGY_TYPE_COLOR[strategy.platform] ?? 'default'} style={{ fontSize: 11, margin: 0 }}>{typeLabel}</Tag>
+            <Tag color={ENV_COLOR[strategy.env]} style={{ fontSize: 11, margin: 0 }}>{strategy.env}</Tag>
+            {strategy.status === 0 && <Tag color="default" style={{ fontSize: 11, margin: 0 }}>停用</Tag>}
+            <Tooltip title="当前版本">
+              <Badge count={`v${strategy.currentVersion}`} color={cfg.color} style={{ fontSize: 10 }} />
+            </Tooltip>
+          </Space>
+        </div>
+      </div>
+      <div style={{ paddingLeft: 26 }}>
+        {strategy.description && (
+          <Typography.Paragraph
+            type="secondary" style={{ fontSize: 13, margin: '2px 0 4px' }}
+            ellipsis={{ rows: 1, expandable: true, symbol: '展开' }}
+          >
+            {strategy.description}
+          </Typography.Paragraph>
+        )}
+        <Tooltip title={strategy.urn}>
+          <Typography.Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+            {strategy.urn}
+          </Typography.Text>
+        </Tooltip>
+      </div>
+    </List.Item>
+  )
+}
+
+function StrategiesTab() {
+  const [query, setQuery]           = useState('')
+  const [strategyType, setStrategyType] = useState<string>('all')
+
+  const { data: allStrategies = [], isLoading } = useQuery({
+    queryKey: ['strategies'],
+    queryFn: () => ontologyApi.getStrategies(),
+  })
+
+  const filtered = allStrategies.filter(s => {
+    const matchType = strategyType === 'all' || s.platform === strategyType
+    const q = query.toLowerCase()
+    const matchQuery = !q ||
+      s.name.toLowerCase().includes(q) ||
+      (s.displayName ?? '').toLowerCase().includes(q) ||
+      (s.description ?? '').toLowerCase().includes(q)
+    return matchType && matchQuery
+  })
+
+  const counts = allStrategies.reduce<Record<string, number>>((acc, s) => {
+    acc[s.platform] = (acc[s.platform] ?? 0) + 1
+    return acc
+  }, {})
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ padding: '12px 20px', background: '#fff', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Segmented
+          value={strategyType}
+          onChange={v => setStrategyType(v as string)}
+          options={[
+            { label: `全部 (${allStrategies.length})`, value: 'all' },
+            ...Object.entries(STRATEGY_TYPE_LABEL).map(([key, label]) => ({
+              label: `${label} (${counts[key] ?? 0})`,
+              value: key,
+            })),
+          ]}
+        />
+        <div style={{ flex: 1 }} />
+        <Input
+          placeholder="搜索策略名称或描述"
+          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          allowClear
+          style={{ width: 240 }}
+        />
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
+        {!isLoading && filtered.length === 0 && (
+          <Empty description="暂无策略" style={{ marginTop: 60 }} />
+        )}
+        {filtered.length > 0 && (
+          <List
+            dataSource={filtered}
+            renderItem={s => <StrategyItem key={s.id} strategy={s} />}
+            style={{ background: '#fff', borderRadius: 8, marginTop: 16 }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 主页面 ────────────────────────────────────────────────────────────────────
 export default function StrategyAttributionPage() {
   const [selectedId, setSelectedId] = useState<number>(MOCK_ATTRIBUTIONS[0].id)
   const selected = MOCK_ATTRIBUTIONS.find(a => a.id === selectedId)!
 
-  const resolvedCount     = MOCK_ATTRIBUTIONS.filter(a => a.status === 'RESOLVED').length
+  const resolvedCount      = MOCK_ATTRIBUTIONS.filter(a => a.status === 'RESOLVED').length
   const investigatingCount = MOCK_ATTRIBUTIONS.filter(a => a.status === 'INVESTIGATING').length
 
   return (
@@ -379,45 +495,58 @@ export default function StrategyAttributionPage() {
       }}>
         <Space size={4}>
           <RobotOutlined style={{ color: '#722ed1' }} />
-          <Text strong style={{ fontSize: 14 }}>策略归因</Text>
+          <Typography.Text strong style={{ fontSize: 14 }}>策略归因</Typography.Text>
         </Space>
         <Divider type="vertical" />
-        <Space size={6}>
-          <Badge color="#fa8c16" />
-          <Text style={{ fontSize: 13 }}>调查中 {investigatingCount} 个</Text>
-        </Space>
-        <Space size={6}>
-          <Badge color="#52c41a" />
-          <Text style={{ fontSize: 13 }}>已解决 {resolvedCount} 个</Text>
-        </Space>
-        <Space size={6}>
-          <Badge color="#8c8c8c" />
-          <Text style={{ fontSize: 13 }}>共 {MOCK_ATTRIBUTIONS.length} 条</Text>
-        </Space>
+        <Space size={6}><Badge color="#fa8c16" /><Typography.Text style={{ fontSize: 13 }}>调查中 {investigatingCount} 个</Typography.Text></Space>
+        <Space size={6}><Badge color="#52c41a" /><Typography.Text style={{ fontSize: 13 }}>已解决 {resolvedCount} 个</Typography.Text></Space>
+        <Space size={6}><Badge color="#8c8c8c" /><Typography.Text style={{ fontSize: 13 }}>共 {MOCK_ATTRIBUTIONS.length} 条</Typography.Text></Space>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        {/* 左侧列表 */}
-        <div style={{
-          width: 280, flexShrink: 0,
-          borderRight: '1px solid #f0f0f0',
-          overflowY: 'auto', background: '#fff',
-        }}>
-          {MOCK_ATTRIBUTIONS.map(item => (
-            <AttributionItem
-              key={item.id}
-              item={item}
-              selected={item.id === selectedId}
-              onClick={() => setSelectedId(item.id)}
-            />
-          ))}
-        </div>
-
-        {/* 右侧详情 */}
-        <div style={{ flex: 1, minWidth: 0, background: '#f5f5f5', overflowY: 'auto' }}>
-          <AttributionDetail item={selected} />
-        </div>
-      </div>
+      {/* 主 Tabs */}
+      <Tabs
+        defaultActiveKey="attribution"
+        style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        tabBarStyle={{ background: '#fff', paddingLeft: 20, marginBottom: 0, flexShrink: 0 }}
+        items={[
+          {
+            key: 'attribution',
+            label: `归因分析 (${MOCK_ATTRIBUTIONS.length})`,
+            children: (
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', height: '100%' }}>
+                {/* 左侧列表 */}
+                <div style={{
+                  width: 280, flexShrink: 0,
+                  borderRight: '1px solid #f0f0f0',
+                  overflowY: 'auto', background: '#fff',
+                }}>
+                  {MOCK_ATTRIBUTIONS.map(item => (
+                    <AttributionItem
+                      key={item.id}
+                      item={item}
+                      selected={item.id === selectedId}
+                      onClick={() => setSelectedId(item.id)}
+                    />
+                  ))}
+                </div>
+                {/* 右侧详情 */}
+                <div style={{ flex: 1, minWidth: 0, background: '#f5f5f5', overflowY: 'auto' }}>
+                  <AttributionDetail item={selected} />
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'strategies',
+            label: 'Strategies',
+            children: (
+              <div style={{ height: '100%' }}>
+                <StrategiesTab />
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

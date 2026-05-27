@@ -1,19 +1,19 @@
-// ── 分类维度 ──────────────────────────────────────────────────────────────────
+// ── 分类器 ────────────────────────────────────────────────────────────────────
 
-export interface OntDimensionType {
+export interface OntClassifier {
   id: number
-  name: string          // 'platform' | 'strategy_type'
+  name: string          // 'platform' | 'strategy_type' | 'container_type' ...
   displayName: string
   description?: string
 }
 
-export interface OntDimension {
+export interface OntClassifierValue {
   id: number
-  dimensionTypeId: number
-  dimensionTypeName: string  // 冗余，方便前端过滤
+  classifierId: number
+  classifierName: string  // 冗余，方便前端过滤
   name: string
   displayName: string
-  category?: string          // 二级分类，如 platform 下的 database/stream/file/api
+  category?: string       // 二级分类，如 platform 下的 database/stream/file/api
   description?: string
   isSystem: boolean
   status: 1 | 0
@@ -33,8 +33,8 @@ export interface OntType {
 export interface OntAspect {
   id: number
   typeId: number
-  dimensionId?: number       // NULL=通用；非 NULL=仅对该维度值的实体生效
-  dimensionName?: string     // 冗余，方便 UI 显示（如 'postgresql'、'TrendFollowing'）
+  classifierValueId?: number    // NULL=通用；非 NULL=仅对该分类值的实体生效
+  classifierValueName?: string  // 冗余，方便 UI 显示（如 'postgresql'、'TrendFollowing'）
   name: string
   displayName: string
   description?: string
@@ -128,6 +128,46 @@ export interface DatasetEntity extends OntEntity {
   domainName?: string
   containerName?: string
   instanceName?: string
+}
+
+export interface OntEntityFieldExtra {
+  id: number
+  fieldId: number
+  key: string
+  value: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Dataset 字段定义 ──────────────────────────────────────────────────────────
+
+export interface OntEntityField {
+  id: number
+  entityId: number
+  // 基础结构
+  name: string
+  displayName?: string
+  dataType: string
+  isNullable: boolean
+  isPk: boolean
+  defaultValue?: string
+  sortOrder: number
+  // 索引 / 分区
+  isIndexed: boolean
+  isPartitionKey: boolean
+  // 敏感标记
+  isPii: boolean
+  sensitivityLevel?: 'public' | 'internal' | 'confidential' | 'restricted'
+  // 数据质量统计
+  distinctCount?: number
+  nullCount?: number
+  minValue?: string
+  maxValue?: string
+  avgValue?: string
+  statsUpdatedAt?: string
+  // 描述与标签
+  description?: string
+  tags?: string[]
 }
 
 // ── 关联 ──────────────────────────────────────────────────────────────────────
@@ -261,4 +301,188 @@ export interface PageResult<T> {
   total: number
   page: number
   pageSize: number
+}
+
+// ── Agent Studio ──────────────────────────────────────────────────────────────
+
+export type AgentType     = 'event_driven' | 'scheduled' | 'manual' | 'streaming'
+export type AgentStatus   = 'active' | 'paused' | 'deprecated'
+export type SkillType     = 'llm' | 'grpc' | 'http' | 'dag' | 'function'
+export type ToolType      = 'mcp' | 'grpc' | 'http' | 'function'
+export type TraceStatus   = 'running' | 'success' | 'failed' | 'timeout'
+export type TriggerType   = 'event' | 'schedule' | 'manual' | 'stream'
+
+export interface AgentSkillRef {
+  name: string
+  sortOrder: number
+}
+
+export interface OntAgent {
+  id: number
+  name: string
+  displayName: string
+  description?: string
+  agentType: AgentType
+  status: AgentStatus
+  env: 'prod' | 'uat' | 'dev'
+  version: number
+  llmModel?: string
+  maxRetries?: number
+  timeoutSecs?: number
+  skills: AgentSkillRef[]       // 有序 Skill 列表
+  tools: string[]               // Tool name 列表
+  // agentRuntime
+  runCount: number
+  successRate: number
+  avgDurationMs?: number
+  lastRunAt?: string
+  // 触发配置（按 agentType 填充）
+  cronExpr?: string             // scheduled
+  eventTypes?: string[]         // event_driven
+  minSeverity?: string          // event_driven
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OntSkill {
+  id: number
+  name: string
+  displayName: string
+  description?: string
+  skillType: SkillType
+  version: number
+  isAsync: boolean
+  timeoutSecs?: number
+  toolName?: string             // 依赖的 Tool name
+  inputSchema?: string          // JSON Schema string
+  outputSchema?: string
+  createdAt: string
+}
+
+export interface OntTool {
+  id: number
+  name: string
+  displayName: string
+  description?: string
+  toolType: ToolType
+  endpoint: string
+  authType?: string
+  tls?: boolean
+  createdAt: string
+}
+
+export interface TraceStep {
+  skill: string
+  skillType: SkillType
+  status: TraceStatus | 'success' | 'failed'
+  durationMs: number
+  tokenIn?: number
+  tokenOut?: number
+  error?: string
+}
+
+export interface OntAgentTrace {
+  id: string
+  agentId: number
+  agentName: string
+  triggerType: TriggerType
+  triggerRef?: string
+  status: TraceStatus
+  durationMs: number
+  tokenIn: number
+  tokenOut: number
+  stepCount: number
+  steps: TraceStep[]
+  runAt: string
+}
+
+export interface OntEvalRun {
+  id: string
+  agentId: number
+  agentName: string
+  datasetName: string
+  caseCount: number
+  accuracy: number
+  precision: number
+  recall: number
+  f1: number
+  avgDurationMs: number
+  avgTokenTotal: number
+  status: 'running' | 'done' | 'failed'
+  runAt: string
+}
+
+// ── Agent Pipeline ────────────────────────────────────────────────────────────
+
+export type PipelineStage =
+  | 'assembly'   // 组装
+  | 'rbac'       // 权限
+  | 'budget'     // 预算
+  | 'test'       // 测试
+  | 'publish'    // 发布
+  | 'run'        // 运行
+  | 'monitor'    // 监控
+
+export type PipelineStatus = 'draft' | 'testing' | 'published' | 'running' | 'paused' | 'deprecated'
+
+export interface PipelineAssembly {
+  agentId?: number           // 选择的 Agent 实体
+  agentName?: string
+  skillNames: string[]       // 有序 Skill 列表
+  toolNames: string[]        // Tool 列表
+  llmModel?: string          // 模型
+  datasetUrns: string[]      // 输入数据集 URN 列表
+  triggerType?: string
+  cronExpr?: string
+  eventTypes?: string[]
+}
+
+export interface PipelineRbac {
+  owners: string[]           // 可管理 Pipeline 的用户
+  operators: string[]        // 可触发运行的用户
+  viewers: string[]          // 只读查看
+  requireApproval: boolean   // 发布前是否需要审批
+  approvers: string[]
+}
+
+export interface PipelineBudget {
+  maxTokensPerRun?: number
+  maxTokensPerDay?: number
+  maxRunsPerDay?: number
+  maxCostUsdPerDay?: number
+  alertThresholdPct: number  // 达到预算 X% 时告警
+}
+
+export interface PipelineTestCase {
+  id: string
+  input: string
+  expectedOutput?: string
+  actualOutput?: string
+  status: 'pending' | 'pass' | 'fail'
+  durationMs?: number
+  tokenUsed?: number
+}
+
+export interface OntPipeline {
+  id: number
+  name: string
+  displayName: string
+  description?: string
+  status: PipelineStatus
+  currentStage: PipelineStage
+  env: 'prod' | 'uat' | 'dev'
+  version: number
+  assembly: PipelineAssembly
+  rbac: PipelineRbac
+  budget: PipelineBudget
+  testCases: PipelineTestCase[]
+  // 运行时
+  runCount: number
+  successRate: number
+  lastRunAt?: string
+  publishedAt?: string
+  publishedBy?: string
+  createdBy: string
+  createdAt: string
+  updatedAt: string
 }

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { Input, Button, Typography, Tag, Spin, Avatar } from 'antd'
+import { Input, Button, Typography, Tag, Spin, Avatar, message } from 'antd'
 import {
   SendOutlined, UserOutlined, RobotOutlined,
   TableOutlined, BarChartOutlined, CodeOutlined,
-  ThunderboltOutlined, MessageOutlined,
+  ThunderboltOutlined, MessageOutlined, SaveOutlined,
 } from '@ant-design/icons'
+import { saveToDashboard } from './DashboardPage'
 
-const { Text, Paragraph } = Typography
+const { Text } = Typography
 
 // ── 类型 ──────────────────────────────────────────────────────────────────────
 type MessageRole = 'user' | 'assistant'
@@ -187,7 +188,7 @@ function SqlBlock({ sql }: { sql: string }) {
 }
 
 // ── 消息气泡 ──────────────────────────────────────────────────────────────────
-function MessageBubble({ msg }: { msg: Message }) {
+function MessageBubble({ msg, question }: { msg: Message; question?: string }) {
   const isUser = msg.role === 'user'
 
   if (isUser) {
@@ -204,6 +205,19 @@ function MessageBubble({ msg }: { msg: Message }) {
           style={{ background: '#e2e8f0', color: '#64748b', flexShrink: 0 }} />
       </div>
     )
+  }
+
+  function handleSave() {
+    if (!msg.result) return
+    saveToDashboard({
+      title: question ?? msg.content.slice(0, 30),
+      sql: msg.sql ?? '',
+      chartType: 'table',
+      columns: msg.result.columns,
+      rows: msg.result.rows,
+      source: 'chat',
+    })
+    message.success('已保存到看板')
   }
 
   return (
@@ -227,9 +241,9 @@ function MessageBubble({ msg }: { msg: Message }) {
             border: '1px solid #f1f5f9', padding: '12px 16px',
           }}>
             {/* 摘要文字 */}
-            <Paragraph style={{ margin: 0, fontSize: 13, lineHeight: 1.7, color: '#1e293b' }}>
+            <Typography.Paragraph style={{ margin: 0, fontSize: 13, lineHeight: 1.7, color: '#1e293b' }}>
               {msg.content}
-            </Paragraph>
+            </Typography.Paragraph>
 
             {/* 结果表格 */}
             {msg.result && (
@@ -239,6 +253,13 @@ function MessageBubble({ msg }: { msg: Message }) {
                   <Text style={{ fontSize: 11, color: '#94a3b8' }}>
                     {msg.result.rows.length} 行结果
                   </Text>
+                  <Button
+                    size="small" type="text" icon={<SaveOutlined />}
+                    style={{ marginLeft: 'auto', fontSize: 11, color: '#1677ff' }}
+                    onClick={handleSave}
+                  >
+                    保存到看板
+                  </Button>
                 </div>
                 <ResultTable result={msg.result} />
               </div>
@@ -376,8 +397,12 @@ export default function ChatBIPage() {
           )}
 
           {/* 消息列表 */}
-          {messages.map(msg => (
-            <MessageBubble key={msg.id} msg={msg} />
+          {messages.map((msg, i) => (
+            <MessageBubble
+              key={msg.id}
+              msg={msg}
+              question={msg.role === 'assistant' && i > 0 ? messages[i - 1]?.content : undefined}
+            />
           ))}
           <div ref={bottomRef} />
         </div>

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   Select, Button, Tag, Typography, Divider, Radio,
-  Table, Empty, Tooltip,
+  Table, Empty, Tooltip, message,
 } from 'antd'
 import {
   PlusOutlined, CloseOutlined, PlayCircleOutlined,
@@ -13,6 +13,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   Legend,
 } from 'recharts'
+import { saveToDashboard } from './DashboardPage'
 
 const { Text } = Typography
 
@@ -95,66 +96,94 @@ const FILTER_OPS: Record<string, string[]> = {
   timestamptz: ['过去 1 小时', '过去 24 小时', '过去 7 天', '过去 30 天', '自定义'],
 }
 
-// ── Mock 基础数据（模拟真实行级数据，查询时在内存中聚合） ─────────────────────
+// ── Mock 基础数据 ─────────────────────────────────────────────────────────────
 
-// execution_ladder 原始行
+// execution_ladder：8 个品种，每个品种 6 条 tick
 const RAW_EXECUTION_LADDER = [
   { symbol: 'EURUSD', bid: 1.08312, ask: 1.08401, spread: 0.00089, markup: 0.00020 },
   { symbol: 'EURUSD', bid: 1.08298, ask: 1.08391, spread: 0.00093, markup: 0.00020 },
   { symbol: 'EURUSD', bid: 1.08334, ask: 1.08418, spread: 0.00084, markup: 0.00020 },
   { symbol: 'EURUSD', bid: 1.08276, ask: 1.08372, spread: 0.00096, markup: 0.00020 },
   { symbol: 'EURUSD', bid: 1.08355, ask: 1.08437, spread: 0.00082, markup: 0.00020 },
+  { symbol: 'EURUSD', bid: 1.08320, ask: 1.08408, spread: 0.00088, markup: 0.00020 },
   { symbol: 'GBPUSD', bid: 1.27340, ask: 1.27496, spread: 0.00156, markup: 0.00030 },
   { symbol: 'GBPUSD', bid: 1.27280, ask: 1.27445, spread: 0.00165, markup: 0.00030 },
   { symbol: 'GBPUSD', bid: 1.27410, ask: 1.27558, spread: 0.00148, markup: 0.00030 },
   { symbol: 'GBPUSD', bid: 1.27190, ask: 1.27352, spread: 0.00162, markup: 0.00030 },
+  { symbol: 'GBPUSD', bid: 1.27460, ask: 1.27612, spread: 0.00152, markup: 0.00030 },
+  { symbol: 'GBPUSD', bid: 1.27310, ask: 1.27472, spread: 0.00162, markup: 0.00030 },
   { symbol: 'USDJPY', bid: 149.820, ask: 150.018, spread: 0.00198, markup: 0.00040 },
   { symbol: 'USDJPY', bid: 149.650, ask: 149.862, spread: 0.00212, markup: 0.00040 },
   { symbol: 'USDJPY', bid: 150.120, ask: 150.305, spread: 0.00185, markup: 0.00040 },
+  { symbol: 'USDJPY', bid: 149.980, ask: 150.168, spread: 0.00188, markup: 0.00040 },
+  { symbol: 'USDJPY', bid: 150.340, ask: 150.528, spread: 0.00188, markup: 0.00040 },
+  { symbol: 'USDJPY', bid: 149.760, ask: 149.958, spread: 0.00198, markup: 0.00040 },
   { symbol: 'GBPJPY', bid: 188.450, ask: 188.762, spread: 0.00312, markup: 0.00060 },
   { symbol: 'GBPJPY', bid: 188.210, ask: 188.538, spread: 0.00328, markup: 0.00060 },
   { symbol: 'GBPJPY', bid: 188.680, ask: 188.974, spread: 0.00294, markup: 0.00060 },
+  { symbol: 'GBPJPY', bid: 188.920, ask: 189.228, spread: 0.00308, markup: 0.00060 },
+  { symbol: 'GBPJPY', bid: 188.100, ask: 188.418, spread: 0.00318, markup: 0.00060 },
+  { symbol: 'GBPJPY', bid: 188.560, ask: 188.862, spread: 0.00302, markup: 0.00060 },
   { symbol: 'EURJPY', bid: 162.340, ask: 162.625, spread: 0.00285, markup: 0.00055 },
   { symbol: 'EURJPY', bid: 162.180, ask: 162.478, spread: 0.00298, markup: 0.00055 },
   { symbol: 'EURJPY', bid: 162.510, ask: 162.782, spread: 0.00272, markup: 0.00055 },
+  { symbol: 'EURJPY', bid: 162.720, ask: 162.998, spread: 0.00278, markup: 0.00055 },
+  { symbol: 'EURJPY', bid: 162.050, ask: 162.338, spread: 0.00288, markup: 0.00055 },
+  { symbol: 'EURJPY', bid: 162.430, ask: 162.712, spread: 0.00282, markup: 0.00055 },
   { symbol: 'AUDUSD', bid: 0.65120, ask: 0.65254, spread: 0.00134, markup: 0.00025 },
   { symbol: 'AUDUSD', bid: 0.65080, ask: 0.65222, spread: 0.00142, markup: 0.00025 },
   { symbol: 'AUDUSD', bid: 0.65190, ask: 0.65316, spread: 0.00126, markup: 0.00025 },
+  { symbol: 'AUDUSD', bid: 0.65240, ask: 0.65372, spread: 0.00132, markup: 0.00025 },
+  { symbol: 'AUDUSD', bid: 0.65050, ask: 0.65188, spread: 0.00138, markup: 0.00025 },
+  { symbol: 'AUDUSD', bid: 0.65310, ask: 0.65440, spread: 0.00130, markup: 0.00025 },
   { symbol: 'USDCHF', bid: 0.89420, ask: 0.89522, spread: 0.00102, markup: 0.00022 },
   { symbol: 'USDCHF', bid: 0.89380, ask: 0.89490, spread: 0.00110, markup: 0.00022 },
+  { symbol: 'USDCHF', bid: 0.89460, ask: 0.89562, spread: 0.00102, markup: 0.00022 },
+  { symbol: 'USDCHF', bid: 0.89340, ask: 0.89448, spread: 0.00108, markup: 0.00022 },
+  { symbol: 'USDCHF', bid: 0.89500, ask: 0.89604, spread: 0.00104, markup: 0.00022 },
+  { symbol: 'USDCHF', bid: 0.89290, ask: 0.89398, spread: 0.00108, markup: 0.00022 },
   { symbol: 'NZDUSD', bid: 0.60340, ask: 0.60518, spread: 0.00178, markup: 0.00035 },
   { symbol: 'NZDUSD', bid: 0.60280, ask: 0.60466, spread: 0.00186, markup: 0.00035 },
+  { symbol: 'NZDUSD', bid: 0.60410, ask: 0.60588, spread: 0.00178, markup: 0.00035 },
+  { symbol: 'NZDUSD', bid: 0.60180, ask: 0.60364, spread: 0.00184, markup: 0.00035 },
+  { symbol: 'NZDUSD', bid: 0.60490, ask: 0.60668, spread: 0.00178, markup: 0.00035 },
+  { symbol: 'NZDUSD', bid: 0.60220, ask: 0.60404, spread: 0.00184, markup: 0.00035 },
 ]
 
-// lp_raw_quote 原始行
+// lp_raw_quote：5 个 LP × 4 个品种，共 20 行
 const RAW_LP_RAW_QUOTE = [
   { lp_id: 'LP_CITI', symbol: 'EURUSD', bid: 1.08318, ask: 1.08356, volume: 5000000 },
   { lp_id: 'LP_CITI', symbol: 'GBPUSD', bid: 1.27348, ask: 1.27392, volume: 3000000 },
   { lp_id: 'LP_CITI', symbol: 'USDJPY', bid: 149.830, ask: 149.878, volume: 8000000 },
-  { lp_id: 'LP_CITI', symbol: 'EURUSD', bid: 1.08302, ask: 1.08341, volume: 4500000 },
+  { lp_id: 'LP_CITI', symbol: 'EURJPY', bid: 162.348, ask: 162.396, volume: 4000000 },
   { lp_id: 'LP_BARC', symbol: 'EURUSD', bid: 1.08310, ask: 1.08352, volume: 4000000 },
   { lp_id: 'LP_BARC', symbol: 'GBPUSD', bid: 1.27335, ask: 1.27382, volume: 2500000 },
   { lp_id: 'LP_BARC', symbol: 'USDJPY', bid: 149.815, ask: 149.868, volume: 6000000 },
   { lp_id: 'LP_BARC', symbol: 'EURJPY', bid: 162.330, ask: 162.385, volume: 3500000 },
   { lp_id: 'LP_DEUT', symbol: 'EURUSD', bid: 1.08305, ask: 1.08351, volume: 3500000 },
   { lp_id: 'LP_DEUT', symbol: 'GBPUSD', bid: 1.27320, ask: 1.27372, volume: 2000000 },
+  { lp_id: 'LP_DEUT', symbol: 'USDJPY', bid: 149.808, ask: 149.862, volume: 4500000 },
   { lp_id: 'LP_DEUT', symbol: 'GBPJPY', bid: 188.440, ask: 188.508, volume: 2000000 },
   { lp_id: 'LP_HSBC', symbol: 'EURUSD', bid: 1.08298, ask: 1.08348, volume: 3000000 },
   { lp_id: 'LP_HSBC', symbol: 'USDJPY', bid: 149.800, ask: 149.858, volume: 5000000 },
   { lp_id: 'LP_HSBC', symbol: 'AUDUSD', bid: 0.65115, ask: 0.65162, volume: 2500000 },
+  { lp_id: 'LP_HSBC', symbol: 'GBPJPY', bid: 188.428, ask: 188.502, volume: 1800000 },
   { lp_id: 'LP_MUFG', symbol: 'USDJPY', bid: 149.790, ask: 149.852, volume: 7000000 },
   { lp_id: 'LP_MUFG', symbol: 'EURJPY', bid: 162.315, ask: 162.378, volume: 4000000 },
   { lp_id: 'LP_MUFG', symbol: 'GBPJPY', bid: 188.420, ask: 188.498, volume: 3000000 },
+  { lp_id: 'LP_MUFG', symbol: 'AUDUSD', bid: 0.65108, ask: 0.65158, volume: 2200000 },
 ]
 
-// account_position 原始行
+// account_position：8 个账户，每个账户 2-3 个持仓
 const RAW_ACCOUNT_POSITION = [
   { account_id: 'ACC_0042', symbol: 'GBPUSD', volume: -2.50, open_price: 1.27340, unrealized_pnl: -3842.50 },
-  { account_id: 'ACC_0042', symbol: 'EURUSD', volume:  1.00, open_price: 1.08200, unrealized_pnl:  112.00  },
+  { account_id: 'ACC_0042', symbol: 'EURUSD', volume:  1.00, open_price: 1.08200, unrealized_pnl:   112.00 },
+  { account_id: 'ACC_0042', symbol: 'USDJPY', volume:  2.00, open_price: 149.500, unrealized_pnl:   640.00 },
   { account_id: 'ACC_0017', symbol: 'USDJPY', volume:  5.00, open_price: 149.820, unrealized_pnl: -2910.00 },
-  { account_id: 'ACC_0017', symbol: 'GBPJPY', volume:  2.00, open_price: 188.100, unrealized_pnl:  700.00  },
+  { account_id: 'ACC_0017', symbol: 'GBPJPY', volume:  2.00, open_price: 188.100, unrealized_pnl:   700.00 },
   { account_id: 'ACC_0089', symbol: 'EURUSD', volume: -1.00, open_price: 1.08920, unrealized_pnl: -1540.00 },
-  { account_id: 'ACC_0089', symbol: 'AUDUSD', volume:  3.00, open_price: 0.64800, unrealized_pnl:  960.00  },
+  { account_id: 'ACC_0089', symbol: 'AUDUSD', volume:  3.00, open_price: 0.64800, unrealized_pnl:   960.00 },
+  { account_id: 'ACC_0089', symbol: 'NZDUSD', volume:  2.00, open_price: 0.59800, unrealized_pnl:  1080.00 },
   { account_id: 'ACC_0031', symbol: 'GBPJPY', volume:  3.00, open_price: 188.450, unrealized_pnl:  1280.00 },
   { account_id: 'ACC_0031', symbol: 'USDJPY', volume: -1.50, open_price: 150.200, unrealized_pnl:   570.00 },
   { account_id: 'ACC_0055', symbol: 'EURJPY', volume: -2.00, open_price: 162.340, unrealized_pnl:  2150.00 },
@@ -163,36 +192,55 @@ const RAW_ACCOUNT_POSITION = [
   { account_id: 'ACC_0073', symbol: 'GBPUSD', volume:  1.00, open_price: 1.27100, unrealized_pnl:   240.00 },
   { account_id: 'ACC_0008', symbol: 'NZDUSD', volume:  2.00, open_price: 0.60100, unrealized_pnl:   480.00 },
   { account_id: 'ACC_0008', symbol: 'USDCHF', volume: -1.00, open_price: 0.89600, unrealized_pnl:   178.00 },
+  { account_id: 'ACC_0061', symbol: 'EURUSD', volume:  3.00, open_price: 1.08050, unrealized_pnl:   756.00 },
+  { account_id: 'ACC_0061', symbol: 'GBPJPY', volume: -1.00, open_price: 189.200, unrealized_pnl:   438.00 },
 ]
 
-// spread_metrics 原始行
+// spread_metrics：每个品种 8 条时间窗口记录（模拟时序聚合）
 const RAW_SPREAD_METRICS = [
   { symbol: 'EURUSD', avg_spread: 0.00089, min_spread: 0.00050, max_spread: 0.00160 },
+  { symbol: 'EURUSD', avg_spread: 0.00092, min_spread: 0.00055, max_spread: 0.00168 },
+  { symbol: 'EURUSD', avg_spread: 0.00085, min_spread: 0.00048, max_spread: 0.00152 },
   { symbol: 'GBPUSD', avg_spread: 0.00156, min_spread: 0.00090, max_spread: 0.00280 },
+  { symbol: 'GBPUSD', avg_spread: 0.00162, min_spread: 0.00095, max_spread: 0.00295 },
+  { symbol: 'GBPUSD', avg_spread: 0.00148, min_spread: 0.00085, max_spread: 0.00268 },
   { symbol: 'USDJPY', avg_spread: 0.00198, min_spread: 0.00120, max_spread: 0.00340 },
+  { symbol: 'USDJPY', avg_spread: 0.00205, min_spread: 0.00128, max_spread: 0.00358 },
+  { symbol: 'USDJPY', avg_spread: 0.00188, min_spread: 0.00112, max_spread: 0.00322 },
   { symbol: 'GBPJPY', avg_spread: 0.00312, min_spread: 0.00180, max_spread: 0.00520 },
+  { symbol: 'GBPJPY', avg_spread: 0.00325, min_spread: 0.00192, max_spread: 0.00548 },
+  { symbol: 'GBPJPY', avg_spread: 0.00298, min_spread: 0.00168, max_spread: 0.00492 },
   { symbol: 'EURJPY', avg_spread: 0.00285, min_spread: 0.00160, max_spread: 0.00480 },
+  { symbol: 'EURJPY', avg_spread: 0.00292, min_spread: 0.00168, max_spread: 0.00498 },
   { symbol: 'AUDUSD', avg_spread: 0.00134, min_spread: 0.00080, max_spread: 0.00240 },
+  { symbol: 'AUDUSD', avg_spread: 0.00140, min_spread: 0.00085, max_spread: 0.00252 },
   { symbol: 'USDCHF', avg_spread: 0.00102, min_spread: 0.00060, max_spread: 0.00190 },
+  { symbol: 'USDCHF', avg_spread: 0.00108, min_spread: 0.00065, max_spread: 0.00198 },
   { symbol: 'NZDUSD', avg_spread: 0.00178, min_spread: 0.00100, max_spread: 0.00310 },
+  { symbol: 'NZDUSD', avg_spread: 0.00185, min_spread: 0.00108, max_spread: 0.00325 },
 ]
 
-// execution_report 原始行
+// execution_report：6 个客户，每个客户 3-4 笔成交
 const RAW_EXECUTION_REPORT = [
   { client_id: 'CLI_001', symbol: 'EURUSD', side: 'BUY',  volume: 1.00, exec_price: 1.08401 },
   { client_id: 'CLI_001', symbol: 'GBPUSD', side: 'SELL', volume: 0.50, exec_price: 1.27496 },
+  { client_id: 'CLI_001', symbol: 'USDJPY', side: 'SELL', volume: 1.00, exec_price: 149.820 },
+  { client_id: 'CLI_001', symbol: 'AUDUSD', side: 'BUY',  volume: 2.00, exec_price: 0.65254 },
   { client_id: 'CLI_002', symbol: 'USDJPY', side: 'BUY',  volume: 2.00, exec_price: 150.018 },
   { client_id: 'CLI_002', symbol: 'EURUSD', side: 'BUY',  volume: 1.50, exec_price: 1.08391 },
+  { client_id: 'CLI_002', symbol: 'NZDUSD', side: 'BUY',  volume: 2.00, exec_price: 0.60518 },
   { client_id: 'CLI_003', symbol: 'GBPJPY', side: 'SELL', volume: 1.00, exec_price: 188.762 },
   { client_id: 'CLI_003', symbol: 'EURJPY', side: 'BUY',  volume: 2.00, exec_price: 162.625 },
+  { client_id: 'CLI_003', symbol: 'GBPUSD', side: 'BUY',  volume: 1.50, exec_price: 1.27340 },
   { client_id: 'CLI_004', symbol: 'AUDUSD', side: 'BUY',  volume: 3.00, exec_price: 0.65254 },
   { client_id: 'CLI_004', symbol: 'USDCHF', side: 'SELL', volume: 1.00, exec_price: 0.89522 },
+  { client_id: 'CLI_004', symbol: 'EURUSD', side: 'SELL', volume: 1.00, exec_price: 1.08312 },
   { client_id: 'CLI_005', symbol: 'EURUSD', side: 'SELL', volume: 2.00, exec_price: 1.08312 },
   { client_id: 'CLI_005', symbol: 'GBPUSD', side: 'BUY',  volume: 1.00, exec_price: 1.27340 },
-  { client_id: 'CLI_001', symbol: 'USDJPY', side: 'SELL', volume: 1.00, exec_price: 149.820 },
-  { client_id: 'CLI_002', symbol: 'NZDUSD', side: 'BUY',  volume: 2.00, exec_price: 0.60518 },
+  { client_id: 'CLI_005', symbol: 'USDJPY', side: 'BUY',  volume: 3.00, exec_price: 149.958 },
   { client_id: 'CLI_006', symbol: 'EURUSD', side: 'BUY',  volume: 0.50, exec_price: 1.08418 },
   { client_id: 'CLI_006', symbol: 'GBPJPY', side: 'BUY',  volume: 1.50, exec_price: 188.538 },
+  { client_id: 'CLI_006', symbol: 'EURJPY', side: 'SELL', volume: 1.00, exec_price: 162.782 },
 ]
 
 const RAW_DATA: Record<string, Record<string, string | number>[]> = {
@@ -394,7 +442,25 @@ export default function QueryBuilderPage() {
         <FunctionOutlined style={{ color: '#1677ff', fontSize: 16 }} />
         <Text strong style={{ fontSize: 14 }}>查询构建器</Text>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <Button size="small" icon={<SaveOutlined />}>保存到看板</Button>
+          <Button
+            size="small" icon={<SaveOutlined />}
+            disabled={!result}
+            onClick={() => {
+              if (!result) return
+              const cols = Object.keys(result[0]).filter(k => k !== '_key')
+              saveToDashboard({
+                title: `${ds.displayName} — ${metrics.map(m => `${m.agg}(${m.field})`).join(', ')}`,
+                sql: sqlPreview,
+                chartType,
+                columns: cols,
+                rows: result.map(r => cols.map(c => r[c])),
+                source: 'query',
+              })
+              message.success('已保存到看板')
+            }}
+          >
+            保存到看板
+          </Button>
           <Button
             type="primary" size="small"
             icon={<PlayCircleOutlined />}

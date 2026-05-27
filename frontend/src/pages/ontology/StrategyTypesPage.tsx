@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Row, Col, Card, Tag, Typography, Space, Collapse, Table, Empty, Badge } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { ontologyApi } from '@/api/ontology'
-import type { OntAspect, OntDimension, OntProperty } from '@/types/ontology'
+import type { OntAspect, OntClassifierValue, OntProperty } from '@/types/ontology'
 
 const { Text, Title, Paragraph } = Typography
 
@@ -60,7 +60,7 @@ const PROP_COLUMNS: ColumnsType<OntProperty> = [
 
 // ── 策略类型卡片 ──────────────────────────────────────────────────────────────
 function StrategyTypeCard({ strategyType, aspects, properties }: {
-  strategyType: OntDimension
+  strategyType: OntClassifierValue
   aspects: OntAspect[]
   properties: OntProperty[]
 }) {
@@ -139,7 +139,7 @@ function StrategyTypeCard({ strategyType, aspects, properties }: {
 export default function StrategyTypesPage() {
   const { data: strategyTypes, isLoading } = useQuery({
     queryKey: ['dimensions', 'strategy_type'],
-    queryFn: () => ontologyApi.getDimensions('strategy_type'),
+    queryFn: () => ontologyApi.getClassifierValues('strategy_type'),
   })
   const { data: aspects    } = useQuery({ queryKey: ['aspects'],    queryFn: () => ontologyApi.getAspects() })
   const { data: properties } = useQuery({ queryKey: ['properties'], queryFn: () => ontologyApi.getProperties() })

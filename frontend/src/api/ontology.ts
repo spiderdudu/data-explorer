@@ -4,64 +4,92 @@ import type {
   ContainerTreeNode,
   LineageGraph,
   OntAspect,
-  OntDimension,
-  OntDimensionType,
+  OntClassifier,
+  OntClassifierValue,
   OntEntity,
   OntEntityExtra,
+  OntEntityField,
+  OntEntityFieldExtra,
   OntEntityLink,
   OntProperty,
   OntType,
   PageResult,
   SearchParams,
   SearchResult,
+  OntAgent,
+  OntSkill,
+  OntTool,
+  OntAgentTrace,
+  OntEvalRun,
+  OntPipeline,
 } from '@/types/ontology'
 
 // ── Mock 数据 ─────────────────────────────────────────────────────────────────
 // 后端 API 就绪后替换为真实请求
 
-const MOCK_DIMENSION_TYPES: OntDimensionType[] = [
-  { id: 1, name: 'platform',      displayName: '数据平台',   description: '数据实体的物理来源，决定适用的平台专属 Aspect' },
-  { id: 2, name: 'strategy_type', displayName: '策略类型',   description: '交易策略的算法分类，决定适用的策略专属 Aspect' },
-  { id: 3, name: 'action_type',   displayName: 'Action 类型', description: '操作的功能分类，决定适用的入参/出参 Aspect' },
+const MOCK_CLASSIFIERS: OntClassifier[] = [
+  { id: 1, name: 'platform',        displayName: '数据平台',    description: '数据实体的物理来源，决定适用的平台专属 Aspect' },
+  { id: 2, name: 'strategy_type',   displayName: '策略类型',    description: '交易策略的算法分类，决定适用的策略专属 Aspect' },
+  { id: 3, name: 'action_type',     displayName: 'Action 类型', description: '操作的功能分类，决定适用的入参/出参 Aspect' },
+  { id: 4, name: 'event_type',      displayName: '事件类型',    description: '市场事件的分类，决定适用的事件专属 Aspect' },
+  { id: 5, name: 'container_type',  displayName: 'Container 类型', description: 'Container 的物理形态，决定适用的结构专属 Aspect' },
 ]
 
-const MOCK_DIMENSIONS: OntDimension[] = [
+const MOCK_CLASSIFIER_VALUES: OntClassifierValue[] = [
   // platform
-  { id: 1,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'postgresql',  displayName: 'PostgreSQL',      category: 'database', description: '业务配置数据库，存储 meta schema、config schema 等结构化业务数据',                    isSystem: true,  status: 1 },
-  { id: 2,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'timescaledb', displayName: 'TimescaleDB',     category: 'database', description: '时序数据库，存储 ladder、account_position、spread_metrics 等高频时序数据',             isSystem: true,  status: 1 },
-  { id: 3,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'redis',       displayName: 'Redis',           category: 'database', description: '缓存数据库，存储实时状态和热点数据，如 EodPriceCache、session 状态',                   isSystem: true,  status: 1 },
-  { id: 4,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 's3',          displayName: 'Amazon S3',       category: 'file',     description: '对象存储，存储报告文件、归档数据、批量导入文件（Excel/CSV/Parquet）',                   isSystem: true,  status: 1 },
-  { id: 5,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'file',        displayName: 'Local File',      category: 'file',     description: '本地文件系统，用于开发环境或运营手动导入的 Excel / CSV 文件',                          isSystem: true,  status: 1 },
-  { id: 6,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'mq',   displayName: 'MQ', category: 'stream',   description: 'MQ 消息流，实时写入，包含 LP tick、OMS 成交回报、配置快照等',             isSystem: true,  status: 1 },
-  { id: 7,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'reuters',     displayName: 'Reuters Eikon',   category: 'api',      description: 'Reuters Eikon API，提供外汇即期汇率、新闻事件等实时数据',                              isSystem: false, status: 1 },
-  { id: 8,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'bloomberg',   displayName: 'Bloomberg',       category: 'api',      description: 'Bloomberg API，提供宏观经济日历（NFP、CPI、利率决议）和市场数据',                      isSystem: false, status: 1 },
-  { id: 20, dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'grpc',        displayName: 'gRPC',            category: 'internal',      description: '内部 gRPC 服务查询，如 Configurator/All、Trader/GetPositions，返回结构化数据',          isSystem: true,  status: 1 },
-  { id: 9,  dimensionTypeId: 1, dimensionTypeName: 'platform', name: 'kafka',       displayName: 'Kafka',           category: 'stream',   description: 'Kafka 消息队列，用于跨系统事件传递（预留，暂未接入）',                                 isSystem: false, status: 0 },
+  { id: 1,  classifierId: 1, classifierName: 'platform', name: 'postgresql',  displayName: 'PostgreSQL',      category: 'database',      description: '业务配置数据库，存储 meta schema、config schema 等结构化业务数据', isSystem: true,  status: 1 },
+  { id: 2,  classifierId: 1, classifierName: 'platform', name: 'timescaledb', displayName: 'TimescaleDB',     category: 'database',      description: '时序数据库，存储 ladder、account_position、spread_metrics 等高频时序数据', isSystem: true,  status: 1 },
+  { id: 3,  classifierId: 1, classifierName: 'platform', name: 'redis',       displayName: 'Redis',           category: 'database',      description: '缓存数据库，存储实时状态和热点数据，如 EodPriceCache、session 状态', isSystem: true,  status: 1 },
+  { id: 4,  classifierId: 1, classifierName: 'platform', name: 's3',          displayName: 'Amazon S3',       category: 'file',          description: '对象存储，存储报告文件、归档数据、批量导入文件（Excel/CSV/Parquet）', isSystem: true,  status: 1 },
+  { id: 5,  classifierId: 1, classifierName: 'platform', name: 'file',        displayName: 'Local File',      category: 'file',          description: '本地文件系统，用于开发环境或运营手动导入的 Excel / CSV 文件', isSystem: true,  status: 1 },
+  { id: 6,  classifierId: 1, classifierName: 'platform', name: 'mq',          displayName: 'MQ',              category: 'stream',        description: 'MQ 消息流，实时写入，包含 LP tick、OMS 成交回报、配置快照等', isSystem: true,  status: 1 },
+  { id: 7,  classifierId: 1, classifierName: 'platform', name: 'reuters',     displayName: 'Reuters Eikon',   category: 'api',           description: 'Reuters Eikon API，提供外汇即期汇率、新闻事件等实时数据', isSystem: false, status: 1 },
+  { id: 8,  classifierId: 1, classifierName: 'platform', name: 'bloomberg',   displayName: 'Bloomberg',       category: 'api',           description: 'Bloomberg API，提供宏观经济日历（NFP、CPI、利率决议）和市场数据', isSystem: false, status: 1 },
+  { id: 20, classifierId: 1, classifierName: 'platform', name: 'grpc',        displayName: 'gRPC',            category: 'internal',      description: '内部 gRPC 服务查询，如 Configurator/All、Trader/GetPositions，返回结构化数据', isSystem: true,  status: 1 },
+  { id: 9,  classifierId: 1, classifierName: 'platform', name: 'kafka',       displayName: 'Kafka',           category: 'stream',        description: 'Kafka 消息队列，用于跨系统事件传递（预留，暂未接入）', isSystem: false, status: 0 },
   // strategy_type
-  { id: 10, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'TrendFollowing', displayName: '趋势跟踪', category: 'signal',  description: '基于均线、动量或突破信号判断趋势方向，顺势建仓，追踪止损出场。适合单边行情', isSystem: false, status: 1 },
-  { id: 11, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'MeanReversion',  displayName: '均值回归', category: 'signal',  description: '价格偏离统计均值后反向建仓，等待回归获利。包含网格、布林带、RSI 超买超卖等变体', isSystem: false, status: 1 },
-  { id: 12, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'Arbitrage',      displayName: '套利',     category: 'spread',  description: '利用相关品种间的价差偏离（跨品种、三角套利）同时建仓，价差回归后平仓', isSystem: false, status: 1 },
-  { id: 13, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'MarketMaking',   displayName: '做市',     category: 'quoting', description: '持续挂出双边报价赚取买卖价差，核心是库存风险管理和动态调整报价', isSystem: false, status: 1 },
-  { id: 14, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'EventDriven',    displayName: '事件驱动', category: 'event',   description: '基于宏观经济事件（NFP、CPI、利率决议、地缘冲突）触发交易，结合 MarketEvent 体系', isSystem: false, status: 1 },
-  { id: 15, dimensionTypeId: 2, dimensionTypeName: 'strategy_type', name: 'Execution',      displayName: '执行算法', category: 'algo',    description: '不预测方向，专注优化大单执行：TWAP / VWAP / Iceberg / POV，降低市场冲击成本', isSystem: false, status: 1 },
+  { id: 10, classifierId: 2, classifierName: 'strategy_type', name: 'TrendFollowing', displayName: '趋势跟踪', category: 'signal',  description: '基于均线、动量或突破信号判断趋势方向，顺势建仓，追踪止损出场。适合单边行情', isSystem: false, status: 1 },
+  { id: 11, classifierId: 2, classifierName: 'strategy_type', name: 'MeanReversion',  displayName: '均值回归', category: 'signal',  description: '价格偏离统计均值后反向建仓，等待回归获利。包含网格、布林带、RSI 超买超卖等变体', isSystem: false, status: 1 },
+  { id: 12, classifierId: 2, classifierName: 'strategy_type', name: 'Arbitrage',      displayName: '套利',     category: 'spread',  description: '利用相关品种间的价差偏离（跨品种、三角套利）同时建仓，价差回归后平仓', isSystem: false, status: 1 },
+  { id: 13, classifierId: 2, classifierName: 'strategy_type', name: 'MarketMaking',   displayName: '做市',     category: 'quoting', description: '持续挂出双边报价赚取买卖价差，核心是库存风险管理和动态调整报价', isSystem: false, status: 1 },
+  { id: 14, classifierId: 2, classifierName: 'strategy_type', name: 'EventDriven',    displayName: '事件驱动', category: 'event',   description: '基于宏观经济事件（NFP、CPI、利率决议、地缘冲突）触发交易，结合 MarketEvent 体系', isSystem: false, status: 1 },
+  { id: 15, classifierId: 2, classifierName: 'strategy_type', name: 'Execution',      displayName: '执行算法', category: 'algo',    description: '不预测方向，专注优化大单执行：TWAP / VWAP / Iceberg / POV，降低市场冲击成本', isSystem: false, status: 1 },
   // action_type
-  { id: 16, dimensionTypeId: 3, dimensionTypeName: 'action_type', name: 'action_grpc',    displayName: 'gRPC',    category: 'internal',      description: '调用内部 gRPC 服务执行写操作，如下单、撤单、修改配置、调整风控参数', isSystem: true, status: 1 },
-  { id: 17, dimensionTypeId: 3, dimensionTypeName: 'action_type', name: 'action_airflow', displayName: 'Airflow', category: 'workflow',       description: '触发 Airflow DAG，执行批量任务，如生成报告、数据导出',             isSystem: true, status: 1 },
-  { id: 18, dimensionTypeId: 3, dimensionTypeName: 'action_type', name: 'action_alert',   displayName: 'Alert',   category: 'notification',   description: '向指定渠道推送预警通知，如 Slack、邮件、SMS',                       isSystem: true, status: 1 },
+  { id: 16, classifierId: 3, classifierName: 'action_type', name: 'action_grpc',    displayName: 'gRPC',    category: 'internal',      description: '调用内部 gRPC 服务执行写操作，如下单、撤单、修改配置、调整风控参数', isSystem: true, status: 1 },
+  { id: 17, classifierId: 3, classifierName: 'action_type', name: 'action_airflow', displayName: 'Airflow', category: 'workflow',       description: '触发 Airflow DAG，执行批量任务，如生成报告、数据导出', isSystem: true, status: 1 },
+  { id: 18, classifierId: 3, classifierName: 'action_type', name: 'action_alert',   displayName: 'Alert',   category: 'notification',   description: '向指定渠道推送预警通知，如 Slack、邮件、SMS', isSystem: true, status: 1 },
+  // event_type
+  { id: 21, classifierId: 4, classifierName: 'event_type', name: 'macro',        displayName: 'Macro',        category: 'economic',  description: '宏观经济事件：NFP、CPI、利率决议、GDP 等，影响全市场流动性', isSystem: true,  status: 1 },
+  { id: 22, classifierId: 4, classifierName: 'event_type', name: 'geopolitical', displayName: 'Geopolitical', category: 'political', description: '地缘政治事件：战争、制裁、选举，影响避险资产和相关货币对', isSystem: true,  status: 1 },
+  { id: 23, classifierId: 4, classifierName: 'event_type', name: 'central_bank', displayName: 'Central Bank', category: 'monetary',  description: '央行事件：利率决议、QE/QT、前瞻指引，直接影响汇率走势', isSystem: true,  status: 1 },
+  { id: 24, classifierId: 4, classifierName: 'event_type', name: 'market',       displayName: 'Market',       category: 'market',    description: '市场结构事件：流动性危机、闪崩、大额成交异常', isSystem: false, status: 1 },
+  // container_type
+  { id: 25, classifierId: 5, classifierName: 'container_type', name: 'schema',    displayName: 'Schema',    category: 'database', description: '数据库 schema，如 PostgreSQL / TimescaleDB 的 public / meta / config', isSystem: true,  status: 1 },
+  { id: 26, classifierId: 5, classifierName: 'container_type', name: 'service',   displayName: 'Service',   category: 'internal', description: 'gRPC proto service，如 Configurator / Trader / StrategyService，含端口信息', isSystem: true,  status: 1 },
+  { id: 27, classifierId: 5, classifierName: 'container_type', name: 'queue_dir', displayName: 'Queue Dir', category: 'stream',   description: 'MQ queue 目录，如 /poin/queues/LD，包含多个 queue', isSystem: true,  status: 1 },
+  { id: 28, classifierId: 5, classifierName: 'container_type', name: 'prefix',    displayName: 'Prefix',    category: 'file',     description: 'S3 bucket 内的路径前缀，用于分组相关文件，如 reports/ / archive/', isSystem: true,  status: 1 },
 ]
 
 // 便捷查找
-const dimByName = (name: string) => MOCK_DIMENSIONS.find(d => d.name === name)!
+const dimByName = (name: string) => MOCK_CLASSIFIER_VALUES.find(d => d.name === name)!
+const ctDim = (name: string) => MOCK_CLASSIFIER_VALUES.find(d => d.classifierName === 'container_type' && d.name === name)!
 
 const MOCK_TYPES: OntType[] = [
   { id: 1,  name: 'Dataset',     displayName: 'Dataset',      description: '结构化数据集，涵盖数据库表、视图、文件（Excel/CSV）、消息流、API 响应等任何按行展开的结构化数据',  isSystem: true,  status: 1 },
   { id: 2,  name: 'Domain',      displayName: 'Domain',       description: '业务域，用于对数据集进行逻辑分组，如 Trading / Market / Risk，可嵌套子域',                    isSystem: true,  status: 1 },
-  { id: 3,  name: 'Container',   displayName: 'Container',    description: '实例内的物理分组，对应数据库 schema 或消息队列前缀，如 public / meta / LD',                    isSystem: true,  status: 1 },
+  { id: 3,  name: 'Container',   displayName: 'Container',    description: '实例内的物理分组，含义随 platform 而定：DB 对应 schema、gRPC 对应 service、MQ 对应 queue 目录、S3 对应 bucket/prefix',  isSystem: true,  status: 1 },
   { id: 4,  name: 'Action',      displayName: 'Action',       description: '可触发的操作，如生成报告、发送预警、调用 gRPC 接口',                                           isSystem: true,  status: 1 },
   { id: 5,  name: 'MarketEvent', displayName: 'Market Event', description: '市场事件，如地缘冲突、央行利率决议、非农数据发布，驱动影响分析流程',                            isSystem: false, status: 1 },
   { id: 7,  name: 'Client',      displayName: 'Client',       description: '客户，FX 交易平台的终端用户，有独立身份和生命周期，关联账户、策略、偏好等业务属性',              isSystem: false, status: 1 },
   { id: 10, name: 'Strategy',    displayName: 'Strategy',     description: '自动交易策略，关联账户和品种，参数结构由策略类型决定',                                          isSystem: false, status: 1 },
-  { id: 11, name: 'Instance',    displayName: 'Instance',     description: '平台的一个具体部署实例，承载 host/port/region 等运维信息，如 platform-rds-prod / LD-queue',    isSystem: true,  status: 1 },
+  { id: 11, name: 'Instance',    displayName: 'Instance',     description: '数据平台的一个可访问端点，连接信息由 platform 类型决定，是 Container 和 Dataset 的物理宿主',    isSystem: true,  status: 1 },
+  { id: 12, name: 'Metric',      displayName: 'Metric',       description: '可计算/可监控的业务度量，如 PnL、点差、持仓量、成交量，支持定义计算公式和数据来源',              isSystem: false, status: 1 },
+  // Agent Studio
+  { id: 20, name: 'Agent',      displayName: 'Agent',        description: 'AI Agent 定义，包含触发条件、Skill 组合、LLM 配置和执行参数',                                    isSystem: false, status: 1 },
+  { id: 21, name: 'Skill',      displayName: 'Skill',        description: 'Agent 可调用的能力单元，封装单一业务操作，如查询持仓、发送预警、调用 gRPC',                      isSystem: false, status: 1 },
+  { id: 22, name: 'Tool',       displayName: 'Tool',         description: 'Skill 底层依赖的工具端点，如 MCP Server、gRPC 服务、REST API、函数',                            isSystem: false, status: 1 },
+  { id: 23, name: 'EvalRun',    displayName: 'Eval Run',     description: 'Agent 评估运行记录，包含测试数据集、评估指标（Accuracy/F1）和对比结果',                          isSystem: false, status: 1 },
+  { id: 24, name: 'AgentTrace', displayName: 'Agent Trace',  description: 'Agent 单次执行的完整轨迹，记录每步 Skill 调用、耗时、Token 用量和中间输出',                     isSystem: false, status: 1 },
 ]
 
 // ── Aspect 样例数据 ────────────────────────────────────────────────────────────
@@ -72,18 +100,23 @@ const MOCK_ASPECTS: OntAspect[] = [
   { id: 2,  typeId: 1, name: 'datasetProperties', displayName: '数据集属性',     description: '标签、描述等业务属性',                                          sortOrder: 2 },
   { id: 3,  typeId: 1, name: 'ownership',         displayName: '所有权',         description: 'Owner / Team / Steward 归属信息',                               sortOrder: 3 },
   // Dataset — 平台专属
-  { id: 4,  typeId: 1, dimensionId: dimByName('postgresql').id,  dimensionName: 'postgresql',  name: 'dbTableMetadata',  displayName: 'DB Table 元数据',      description: 'PostgreSQL 表/视图的物理位置（schema / table / pk）',              sortOrder: 4 },
-  { id: 5,  typeId: 1, dimensionId: dimByName('timescaledb').id, dimensionName: 'timescaledb', name: 'dbTableMetadata',  displayName: 'DB Table 元数据',      description: 'TimescaleDB 表的物理位置（schema / table / pk / hypertable）',    sortOrder: 4 },
-  { id: 6,  typeId: 1, dimensionId: dimByName('redis').id,       dimensionName: 'redis',       name: 'redisMetadata',    displayName: 'Redis 元数据',         description: 'Redis key 模式、数据结构类型（string/hash/zset 等）',             sortOrder: 4 },
-  { id: 7,  typeId: 1, dimensionId: dimByName('s3').id,          dimensionName: 's3',          name: 'fileMetadata',     displayName: 'S3 文件元数据',        description: 'S3 路径、文件格式、分隔符',                                       sortOrder: 4 },
-  { id: 8,  typeId: 1, dimensionId: dimByName('file').id,        dimensionName: 'file',        name: 'fileMetadata',     displayName: '本地文件元数据',       description: '本地文件路径、文件格式、分隔符',                                   sortOrder: 4 },
-  { id: 9,  typeId: 1, dimensionId: dimByName('mq').id,   dimensionName: 'mq',   name: 'streamMetadata',   displayName: 'MQ 元数据',     description: 'MQ 名称、消息类型（DTO class）',                    sortOrder: 4 },
-  { id: 10, typeId: 1, dimensionId: dimByName('reuters').id,     dimensionName: 'reuters',     name: 'apiMetadata',      displayName: 'Reuters API 元数据',   description: 'Reuters API endpoint、认证方式',                                 sortOrder: 4 },
-  { id: 11, typeId: 1, dimensionId: dimByName('bloomberg').id,   dimensionName: 'bloomberg',   name: 'apiMetadata',      displayName: 'Bloomberg API 元数据', description: 'Bloomberg API endpoint、认证方式',                               sortOrder: 4 },
-  { id: 54, typeId: 1, dimensionId: dimByName('grpc').id,        dimensionName: 'grpc',        name: 'grpcMetadata',     displayName: 'gRPC 元数据',          description: 'gRPC service、method、请求 payload',                             sortOrder: 4 },  // MarketEvent
+  { id: 4,  typeId: 1, classifierValueId: dimByName('postgresql').id,  classifierValueName: 'postgresql',  name: 'dbTableMetadata',  displayName: 'DB Table 元数据',      description: 'PostgreSQL 表/视图的物理位置（schema / table / pk）',              sortOrder: 4 },
+  { id: 5,  typeId: 1, classifierValueId: dimByName('timescaledb').id, classifierValueName: 'timescaledb', name: 'dbTableMetadata',  displayName: 'DB Table 元数据',      description: 'TimescaleDB 表的物理位置（schema / table / pk / hypertable）',    sortOrder: 4 },
+  { id: 6,  typeId: 1, classifierValueId: dimByName('redis').id,       classifierValueName: 'redis',       name: 'redisMetadata',    displayName: 'Redis 元数据',         description: 'Redis key 模式、数据结构类型（string/hash/zset 等）',             sortOrder: 4 },
+  { id: 7,  typeId: 1, classifierValueId: dimByName('s3').id,          classifierValueName: 's3',          name: 'fileMetadata',     displayName: 'S3 文件元数据',        description: 'S3 路径、文件格式、分隔符',                                       sortOrder: 4 },
+  { id: 8,  typeId: 1, classifierValueId: dimByName('file').id,        classifierValueName: 'file',        name: 'fileMetadata',     displayName: '本地文件元数据',       description: '本地文件路径、文件格式、分隔符',                                   sortOrder: 4 },
+  { id: 9,  typeId: 1, classifierValueId: dimByName('mq').id,   classifierValueName: 'mq',   name: 'streamMetadata',   displayName: 'MQ 元数据',     description: 'MQ 名称、消息类型（DTO class）',                    sortOrder: 4 },
+  { id: 10, typeId: 1, classifierValueId: dimByName('reuters').id,     classifierValueName: 'reuters',     name: 'apiMetadata',      displayName: 'Reuters API 元数据',   description: 'Reuters API endpoint、认证方式',                                 sortOrder: 4 },
+  { id: 11, typeId: 1, classifierValueId: dimByName('bloomberg').id,   classifierValueName: 'bloomberg',   name: 'apiMetadata',      displayName: 'Bloomberg API 元数据', description: 'Bloomberg API endpoint、认证方式',                               sortOrder: 4 },
+  { id: 54, typeId: 1, classifierValueId: dimByName('grpc').id,        classifierValueName: 'grpc',        name: 'grpcMetadata',     displayName: 'gRPC 元数据',          description: 'gRPC service、method、请求 payload',                             sortOrder: 4 },  // MarketEvent
   { id: 12, typeId: 5, name: 'eventInfo',      displayName: '事件信息',   description: '事件类型、标题、发生时间、严重程度、相关品种',          sortOrder: 1 },
   { id: 44, typeId: 5, name: 'eventSource',    displayName: '事件来源',   description: '数据来源、原始链接、爬虫抓取内容',                      sortOrder: 2 },
   { id: 13, typeId: 5, name: 'impactAnalysis', displayName: '影响分析',   description: 'LLM 推断的受影响品种、方向、置信度和摘要',              sortOrder: 3 },
+  // event_type 专属 aspects
+  { id: 56, typeId: 5, classifierValueId: 21, classifierValueName: 'macro',        name: 'macroIndicator',   displayName: 'Macro Indicator',   description: '宏观指标详情：实际值、预期值、前值、偏差',         sortOrder: 4 },
+  { id: 57, typeId: 5, classifierValueId: 22, classifierValueName: 'geopolitical', name: 'geopoliticalScope', displayName: 'Geopolitical Scope', description: '涉及国家/地区、冲突类型、制裁范围',               sortOrder: 4 },
+  { id: 58, typeId: 5, classifierValueId: 23, classifierValueName: 'central_bank', name: 'centralBankDecision', displayName: 'CB Decision',     description: '央行决议详情：利率变动、声明基调、票数',           sortOrder: 4 },
+  { id: 59, typeId: 5, classifierValueId: 24, classifierValueName: 'market',       name: 'marketAnomaly',    displayName: 'Market Anomaly',    description: '市场异常详情：触发品种、价格偏离幅度、持续时间',   sortOrder: 4 },
   // Client
   { id: 15, typeId: 7, name: 'clientProfile',    displayName: '客户档案',   description: '客户身份信息、KYC 状态、风险等级、客户类型',            sortOrder: 1 },
   { id: 16, typeId: 7, name: 'clientPreference', displayName: '交易偏好',   description: '偏好品种、交易时段、杠杆偏好',                          sortOrder: 2 },
@@ -92,44 +125,74 @@ const MOCK_ASPECTS: OntAspect[] = [
   { id: 36, typeId: 10, name: 'positionConfig', displayName: '仓位配置',   description: '所有策略通用：手数、杠杆上限、最大持仓',                      sortOrder: 2 },
   { id: 37, typeId: 10, name: 'riskControl',    displayName: '风控配置',   description: '所有策略通用：最大回撤、日亏损上限、止损点数',                sortOrder: 3 },
   // Strategy — 策略类型专属 aspect
-  { id: 31, typeId: 10, dimensionId: dimByName('TrendFollowing').id, dimensionName: 'TrendFollowing', name: 'entrySignal',      displayName: '入场信号',   description: '趋势跟踪：触发建仓的技术指标和条件',           sortOrder: 4 },
-  { id: 38, typeId: 10, dimensionId: dimByName('TrendFollowing').id, dimensionName: 'TrendFollowing', name: 'exitCondition',    displayName: '出场条件',   description: '趋势跟踪：止盈目标、追踪止损、信号反转出场',   sortOrder: 5 },
-  { id: 32, typeId: 10, dimensionId: dimByName('MeanReversion').id,  dimensionName: 'MeanReversion',  name: 'reversionSetup',   displayName: '回归设置',   description: '均值回归：统计窗口、偏离阈值、网格参数',       sortOrder: 4 },
-  { id: 39, typeId: 10, dimensionId: dimByName('MeanReversion').id,  dimensionName: 'MeanReversion',  name: 'exitCondition',    displayName: '出场条件',   description: '均值回归：回归目标价、最大持仓时间',           sortOrder: 5 },
-  { id: 33, typeId: 10, dimensionId: dimByName('Arbitrage').id,      dimensionName: 'Arbitrage',      name: 'arbitrageSetup',   displayName: '套利设置',   description: '套利：对冲品种、价差统计窗口、建仓阈值',       sortOrder: 4 },
-  { id: 40, typeId: 10, dimensionId: dimByName('Arbitrage').id,      dimensionName: 'Arbitrage',      name: 'exitCondition',    displayName: '出场条件',   description: '套利：价差回归目标、最大持仓时间、强平阈值',   sortOrder: 5 },
-  { id: 34, typeId: 10, dimensionId: dimByName('MarketMaking').id,   dimensionName: 'MarketMaking',   name: 'quotingConfig',    displayName: '报价配置',   description: '做市：买卖价差、报价量、库存上限',             sortOrder: 4 },
-  { id: 41, typeId: 10, dimensionId: dimByName('MarketMaking').id,   dimensionName: 'MarketMaking',   name: 'inventoryControl', displayName: '库存管理',   description: '做市：库存偏斜调整、对冲触发条件',             sortOrder: 5 },
-  { id: 35, typeId: 10, dimensionId: dimByName('EventDriven').id,    dimensionName: 'EventDriven',    name: 'eventFilter',      displayName: '事件过滤',   description: '事件驱动：关注的事件类型、品种、影响方向',     sortOrder: 4 },
-  { id: 42, typeId: 10, dimensionId: dimByName('EventDriven').id,    dimensionName: 'EventDriven',    name: 'tradeRule',        displayName: '交易规则',   description: '事件驱动：触发条件、建仓方向、持仓时长',       sortOrder: 5 },
-  { id: 43, typeId: 10, dimensionId: dimByName('Execution').id,      dimensionName: 'Execution',      name: 'executionParams',  displayName: '执行参数',   description: '执行算法：算法类型、时间窗口、切片数量',       sortOrder: 4 },
+  { id: 31, typeId: 10, classifierValueId: dimByName('TrendFollowing').id, classifierValueName: 'TrendFollowing', name: 'entrySignal',      displayName: '入场信号',   description: '趋势跟踪：触发建仓的技术指标和条件',           sortOrder: 4 },
+  { id: 38, typeId: 10, classifierValueId: dimByName('TrendFollowing').id, classifierValueName: 'TrendFollowing', name: 'exitCondition',    displayName: '出场条件',   description: '趋势跟踪：止盈目标、追踪止损、信号反转出场',   sortOrder: 5 },
+  { id: 32, typeId: 10, classifierValueId: dimByName('MeanReversion').id,  classifierValueName: 'MeanReversion',  name: 'reversionSetup',   displayName: '回归设置',   description: '均值回归：统计窗口、偏离阈值、网格参数',       sortOrder: 4 },
+  { id: 39, typeId: 10, classifierValueId: dimByName('MeanReversion').id,  classifierValueName: 'MeanReversion',  name: 'exitCondition',    displayName: '出场条件',   description: '均值回归：回归目标价、最大持仓时间',           sortOrder: 5 },
+  { id: 33, typeId: 10, classifierValueId: dimByName('Arbitrage').id,      classifierValueName: 'Arbitrage',      name: 'arbitrageSetup',   displayName: '套利设置',   description: '套利：对冲品种、价差统计窗口、建仓阈值',       sortOrder: 4 },
+  { id: 40, typeId: 10, classifierValueId: dimByName('Arbitrage').id,      classifierValueName: 'Arbitrage',      name: 'exitCondition',    displayName: '出场条件',   description: '套利：价差回归目标、最大持仓时间、强平阈值',   sortOrder: 5 },
+  { id: 34, typeId: 10, classifierValueId: dimByName('MarketMaking').id,   classifierValueName: 'MarketMaking',   name: 'quotingConfig',    displayName: '报价配置',   description: '做市：买卖价差、报价量、库存上限',             sortOrder: 4 },
+  { id: 41, typeId: 10, classifierValueId: dimByName('MarketMaking').id,   classifierValueName: 'MarketMaking',   name: 'inventoryControl', displayName: '库存管理',   description: '做市：库存偏斜调整、对冲触发条件',             sortOrder: 5 },
+  { id: 35, typeId: 10, classifierValueId: dimByName('EventDriven').id,    classifierValueName: 'EventDriven',    name: 'eventFilter',      displayName: '事件过滤',   description: '事件驱动：关注的事件类型、品种、影响方向',     sortOrder: 4 },
+  { id: 42, typeId: 10, classifierValueId: dimByName('EventDriven').id,    classifierValueName: 'EventDriven',    name: 'tradeRule',        displayName: '交易规则',   description: '事件驱动：触发条件、建仓方向、持仓时长',       sortOrder: 5 },
+  { id: 43, typeId: 10, classifierValueId: dimByName('Execution').id,      classifierValueName: 'Execution',      name: 'executionParams',  displayName: '执行参数',   description: '执行算法：算法类型、时间窗口、切片数量',       sortOrder: 4 },
   // Action — 通用
   { id: 20, typeId: 4,  name: 'actionInfo',       displayName: 'Action 信息',  description: '操作名称、触发条件、超时配置',                                  sortOrder: 1 },
   // Action — 专属（按 action_type 维度：grpc / airflow / alert）
-  { id: 46, typeId: 4,  dimensionId: dimByName('action_grpc').id,    dimensionName: 'action_grpc',    name: 'grpcActionInfo',     displayName: 'gRPC 连接',     description: 'gRPC host / port / service / method',          sortOrder: 2 },
-  { id: 47, typeId: 4,  dimensionId: dimByName('action_grpc').id,    dimensionName: 'action_grpc',    name: 'grpcActionInput',    displayName: 'gRPC 入参',     description: '业务入参，因具体操作而异',                     sortOrder: 3 },
-  { id: 48, typeId: 4,  dimensionId: dimByName('action_grpc').id,    dimensionName: 'action_grpc',    name: 'grpcActionOutput',   displayName: 'gRPC 出参',     description: '业务出参，因具体操作而异',                     sortOrder: 4 },
-  { id: 49, typeId: 4,  dimensionId: dimByName('action_airflow').id, dimensionName: 'action_airflow', name: 'airflowActionInfo',  displayName: 'Airflow 连接',  description: 'Airflow host / port / dag_id',                 sortOrder: 2 },
-  { id: 52, typeId: 4,  dimensionId: dimByName('action_airflow').id, dimensionName: 'action_airflow', name: 'airflowActionInput', displayName: 'Airflow 入参',  description: 'DAG 触发参数，如报告类型、品种过滤、输出格式', sortOrder: 3 },
-  { id: 53, typeId: 4,  dimensionId: dimByName('action_airflow').id, dimensionName: 'action_airflow', name: 'airflowActionOutput',displayName: 'Airflow 出参',  description: 'DAG 执行结果，如报告 URL、run_id',             sortOrder: 4 },
-  { id: 55, typeId: 4,  dimensionId: dimByName('action_alert').id,   dimensionName: 'action_alert',   name: 'alertActionInfo',    displayName: 'Alert 连接',    description: 'Alert host / port / webhook_path',             sortOrder: 2 },
-  { id: 56, typeId: 4,  dimensionId: dimByName('action_alert').id,   dimensionName: 'action_alert',   name: 'alertActionInput',   displayName: 'Alert 入参',    description: '消息内容、推送渠道、严重程度',                 sortOrder: 3 },
-  { id: 60, typeId: 4,  dimensionId: dimByName('action_alert').id,   dimensionName: 'action_alert',   name: 'alertActionOutput',  displayName: 'Alert 出参',    description: '成功推送数、失败渠道列表',                     sortOrder: 4 },
+  { id: 46, typeId: 4,  classifierValueId: dimByName('action_grpc').id,    classifierValueName: 'action_grpc',    name: 'grpcActionInfo',     displayName: 'gRPC 连接',     description: 'gRPC host / port / service / method',          sortOrder: 2 },
+  { id: 47, typeId: 4,  classifierValueId: dimByName('action_grpc').id,    classifierValueName: 'action_grpc',    name: 'grpcActionInput',    displayName: 'gRPC 入参',     description: '业务入参，因具体操作而异',                     sortOrder: 3 },
+  { id: 48, typeId: 4,  classifierValueId: dimByName('action_grpc').id,    classifierValueName: 'action_grpc',    name: 'grpcActionOutput',   displayName: 'gRPC 出参',     description: '业务出参，因具体操作而异',                     sortOrder: 4 },
+  { id: 49, typeId: 4,  classifierValueId: dimByName('action_airflow').id, classifierValueName: 'action_airflow', name: 'airflowActionInfo',  displayName: 'Airflow 连接',  description: 'Airflow host / port / dag_id',                 sortOrder: 2 },
+  { id: 52, typeId: 4,  classifierValueId: dimByName('action_airflow').id, classifierValueName: 'action_airflow', name: 'airflowActionInput', displayName: 'Airflow 入参',  description: 'DAG 触发参数，如报告类型、品种过滤、输出格式', sortOrder: 3 },
+  { id: 53, typeId: 4,  classifierValueId: dimByName('action_airflow').id, classifierValueName: 'action_airflow', name: 'airflowActionOutput',displayName: 'Airflow 出参',  description: 'DAG 执行结果，如报告 URL、run_id',             sortOrder: 4 },
+  { id: 55, typeId: 4,  classifierValueId: dimByName('action_alert').id,   classifierValueName: 'action_alert',   name: 'alertActionInfo',    displayName: 'Alert 连接',    description: 'Alert host / port / webhook_path',             sortOrder: 2 },
+  { id: 67, typeId: 4,  classifierValueId: dimByName('action_alert').id,   classifierValueName: 'action_alert',   name: 'alertActionInput',   displayName: 'Alert 入参',    description: '消息内容、推送渠道、严重程度',                 sortOrder: 3 },
+  { id: 68, typeId: 4,  classifierValueId: dimByName('action_alert').id,   classifierValueName: 'action_alert',   name: 'alertActionOutput',  displayName: 'Alert 出参',    description: '成功推送数、失败渠道列表',                     sortOrder: 4 },
   // Domain
   { id: 21, typeId: 2,  name: 'domainInfo',       displayName: '域信息',         description: '域的 owner 和描述',                                              sortOrder: 1 },
   // Container
-  { id: 22, typeId: 3,  name: 'containerInfo',    displayName: '容器信息',       description: '实例内物理分组的描述',                                          sortOrder: 1 },
+  { id: 22, typeId: 3,  name: 'containerInfo',    displayName: '容器信息',       description: '所有 Container 通用的基础信息',                                         sortOrder: 1 },
+  // Container — 平台专属
+  { id: 62, typeId: 3,  classifierValueId: ctDim('schema').id,    classifierValueName: 'schema',    name: 'dbSchemaInfo',    displayName: 'DB Schema 信息',    description: '数据库 schema 的物理属性（表数量、owner）',           sortOrder: 2 },
+  { id: 63, typeId: 3,  classifierValueId: ctDim('service').id, classifierValueName: 'service', name: 'grpcProtoInfo', displayName: 'Proto 信息', description: 'proto 文件定义的 service，如 configurator.proto / trader.proto，含端口', sortOrder: 2 },
+  { id: 64, typeId: 3,  classifierValueId: ctDim('queue_dir').id, classifierValueName: 'queue_dir', name: 'mqQueueDirInfo',  displayName: 'Queue 目录信息',    description: 'MQ queue 目录路径和包含的 queue 列表',                sortOrder: 2 },
+  { id: 65, typeId: 3,  classifierValueId: ctDim('prefix').id,    classifierValueName: 'prefix',    name: 's3PrefixInfo',    displayName: 'S3 Prefix 信息',    description: 'S3 bucket 内的路径前缀，用于分组相关文件',            sortOrder: 2 },
   // Instance — 通用
   { id: 23, typeId: 11, name: 'instanceInfo',     displayName: '实例信息',       description: '所有 Instance 通用的基础信息',                                  sortOrder: 1 },
   // Instance — 平台专属
-  { id: 24, typeId: 11, dimensionId: dimByName('postgresql').id,  dimensionName: 'postgresql',  name: 'postgresqlInstanceInfo',  displayName: 'PostgreSQL 连接信息',   description: 'host / port / database_name / ssl_mode',        sortOrder: 2 },
-  { id: 25, typeId: 11, dimensionId: dimByName('timescaledb').id, dimensionName: 'timescaledb', name: 'timescaledbInstanceInfo', displayName: 'TimescaleDB 连接信息',  description: 'host / port / database_name / retention_policy', sortOrder: 2 },
-  { id: 26, typeId: 11, dimensionId: dimByName('redis').id,       dimensionName: 'redis',       name: 'redisInstanceInfo',       displayName: 'Redis 连接信息',        description: 'host / port / db_index / max_memory',           sortOrder: 2 },
-  { id: 27, typeId: 11, dimensionId: dimByName('mq').id,   dimensionName: 'mq',   name: 'mqInstanceInfo',   displayName: 'MQ 实例信息',    description: 'instance_key / base_path / queue_dir',          sortOrder: 2 },
-  { id: 28, typeId: 11, dimensionId: dimByName('s3').id,          dimensionName: 's3',          name: 's3InstanceInfo',          displayName: 'S3 存储桶信息',         description: 'bucket / region / endpoint',                    sortOrder: 2 },
-  { id: 29, typeId: 11, dimensionId: dimByName('reuters').id,     dimensionName: 'reuters',     name: 'reutersInstanceInfo',     displayName: 'Reuters API 信息',      description: 'endpoint / api_key',                            sortOrder: 2 },
-  { id: 30, typeId: 11, dimensionId: dimByName('bloomberg').id,   dimensionName: 'bloomberg',   name: 'bloombergInstanceInfo',   displayName: 'Bloomberg API 信息',    description: 'endpoint / api_key',                            sortOrder: 2 },
-  { id: 61, typeId: 11, dimensionId: dimByName('grpc').id,        dimensionName: 'grpc',        name: 'grpcInstanceInfo',        displayName: 'gRPC 连接信息',         description: 'host / port / tls / services',                  sortOrder: 2 },
+  { id: 24, typeId: 11, classifierValueId: dimByName('postgresql').id,  classifierValueName: 'postgresql',  name: 'postgresqlInstanceInfo',  displayName: 'PostgreSQL 连接信息',   description: 'host / port / database_name / ssl_mode',        sortOrder: 2 },
+  { id: 25, typeId: 11, classifierValueId: dimByName('timescaledb').id, classifierValueName: 'timescaledb', name: 'timescaledbInstanceInfo', displayName: 'TimescaleDB 连接信息',  description: 'host / port / database_name / retention_policy', sortOrder: 2 },
+  { id: 26, typeId: 11, classifierValueId: dimByName('redis').id,       classifierValueName: 'redis',       name: 'redisInstanceInfo',       displayName: 'Redis 连接信息',        description: 'host / port / db_index / max_memory',           sortOrder: 2 },
+  { id: 27, typeId: 11, classifierValueId: dimByName('mq').id,   classifierValueName: 'mq',   name: 'mqInstanceInfo',   displayName: 'MQ 实例信息',    description: 'instance_key / base_path / queue_dir',          sortOrder: 2 },
+  { id: 28, typeId: 11, classifierValueId: dimByName('s3').id,          classifierValueName: 's3',          name: 's3InstanceInfo',          displayName: 'S3 存储桶信息',         description: 'bucket / region / endpoint',                    sortOrder: 2 },
+  { id: 29, typeId: 11, classifierValueId: dimByName('reuters').id,     classifierValueName: 'reuters',     name: 'reutersInstanceInfo',     displayName: 'Reuters API 信息',      description: 'endpoint / api_key',                            sortOrder: 2 },
+  { id: 30, typeId: 11, classifierValueId: dimByName('bloomberg').id,   classifierValueName: 'bloomberg',   name: 'bloombergInstanceInfo',   displayName: 'Bloomberg API 信息',    description: 'endpoint / api_key',                            sortOrder: 2 },
+  { id: 61, typeId: 11, classifierValueId: dimByName('grpc').id, classifierValueName: 'grpc', name: 'grpcServiceInfo', displayName: 'gRPC Service 信息', description: '整个 gRPC 服务进程的连接信息：host / tls', sortOrder: 2 },
+  // Metric — 通用
+  { id: 70, typeId: 12, name: 'metricInfo',       displayName: 'Metric 定义',   description: '指标的基本定义：名称、分类、单位、方向',                    sortOrder: 1 },
+  { id: 71, typeId: 12, name: 'metricFormula',    displayName: '计算公式',      description: '指标的计算逻辑：公式、聚合方式、时间窗口',                  sortOrder: 2 },
+  { id: 72, typeId: 12, name: 'metricDataSource', displayName: '数据来源',      description: '指标依赖的数据集和字段',                                    sortOrder: 3 },
+  // Agent
+  { id: 80, typeId: 20, name: 'agentCore',        displayName: 'Agent 核心',    description: '触发类型、LLM 模型、最大并发、超时配置',                    sortOrder: 1 },
+  { id: 81, typeId: 20, name: 'agentSkills',      displayName: 'Skill 配置',    description: '关联的 Skill 列表及执行顺序',                              sortOrder: 2 },
+  { id: 82, typeId: 20, name: 'agentRuntime',     displayName: '运行时统计',    description: '累计执行次数、成功率、平均耗时、最近运行时间',              sortOrder: 3 },
+  // Skill
+  { id: 83, typeId: 21, name: 'skillCore',        displayName: 'Skill 核心',    description: 'Skill 名称、类型（llm/grpc/http/dag）、描述、版本',        sortOrder: 1 },
+  { id: 84, typeId: 21, name: 'skillInput',       displayName: '入参定义',      description: '入参 JSON Schema，描述调用时需要传入的参数结构',            sortOrder: 2 },
+  { id: 85, typeId: 21, name: 'skillOutput',      displayName: '出参定义',      description: '出参 JSON Schema，描述执行后返回的数据结构',               sortOrder: 3 },
+  { id: 86, typeId: 21, name: 'skillTool',        displayName: '依赖 Tool',     description: '该 Skill 底层调用的 Tool 端点',                           sortOrder: 4 },
+  // Tool
+  { id: 87, typeId: 22, name: 'toolCore',         displayName: 'Tool 核心',     description: 'Tool 名称、类型（mcp/grpc/http/function）、版本',          sortOrder: 1 },
+  { id: 88, typeId: 22, name: 'toolConnection',   displayName: '连接信息',      description: 'host / port / endpoint / auth_type',                      sortOrder: 2 },
+  { id: 89, typeId: 22, name: 'toolCapability',   displayName: '能力描述',      description: '该 Tool 暴露的方法列表和功能说明',                         sortOrder: 3 },
+  // EvalRun
+  { id: 90, typeId: 23, name: 'evalConfig',       displayName: '评估配置',      description: '评估数据集、评估维度、对比基准 Agent 版本',                sortOrder: 1 },
+  { id: 91, typeId: 23, name: 'evalMetrics',      displayName: '评估指标',      description: 'Accuracy / Precision / Recall / F1 / 平均耗时 / Token',   sortOrder: 2 },
+  { id: 92, typeId: 23, name: 'evalSummary',      displayName: '评估摘要',      description: 'LLM 生成的评估结论和改进建议',                            sortOrder: 3 },
+  // AgentTrace
+  { id: 93, typeId: 24, name: 'traceInfo',        displayName: 'Trace 信息',    description: '触发来源、触发时间、总耗时、总 Token、最终状态',           sortOrder: 1 },
+  { id: 94, typeId: 24, name: 'traceSteps',       displayName: '执行步骤',      description: '每步 Skill 的调用顺序、耗时、输入输出快照',               sortOrder: 2 },
+  { id: 95, typeId: 24, name: 'traceError',       displayName: '错误信息',      description: '失败步骤、错误类型、堆栈摘要、重试次数',                  sortOrder: 3 },
 ]
 
 // ── Property 样例数据 ──────────────────────────────────────────────────────────
@@ -197,6 +260,26 @@ const MOCK_PROPERTIES: OntProperty[] = [
   { id: 35, aspectId: 13, typeId: 5, name: 'impact_direction', displayName: '影响方向',   dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: 'BULLISH / BEARISH / NEUTRAL' },
   { id: 36, aspectId: 13, typeId: 5, name: 'confidence',       displayName: '置信度',     dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'LLM 推断置信度 0.00~1.00' },
   { id: 64, aspectId: 13, typeId: 5, name: 'summary',          displayName: '影响摘要',   dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: 'LLM 生成的影响分析摘要' },
+  // Event — macroIndicator (aspectId=56)
+  { id: 200, aspectId: 56, typeId: 5, name: 'indicator_name', displayName: 'Indicator',  dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 NFP、CPI、GDP、Unemployment Rate' },
+  { id: 201, aspectId: 56, typeId: 5, name: 'actual',         displayName: 'Actual',     dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '实际公布值' },
+  { id: 202, aspectId: 56, typeId: 5, name: 'forecast',       displayName: 'Forecast',   dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '市场预期值' },
+  { id: 203, aspectId: 56, typeId: 5, name: 'previous',       displayName: 'Previous',   dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '前值' },
+  { id: 204, aspectId: 56, typeId: 5, name: 'deviation',      displayName: 'Deviation',  dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 5, description: '实际值与预期值偏差，正值为超预期' },
+  // Event — geopoliticalScope (aspectId=57)
+  { id: 205, aspectId: 57, typeId: 5, name: 'countries',      displayName: 'Countries',  dataType: 'string',  isRequired: true,  isMulti: true,  isSystem: false, sortOrder: 1, description: '涉及国家/地区，如 RU、UA、US' },
+  { id: 206, aspectId: 57, typeId: 5, name: 'conflict_type',  displayName: 'Type',       dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 2, description: 'WAR / SANCTION / ELECTION / COUP / TRADE_WAR' },
+  { id: 207, aspectId: 57, typeId: 5, name: 'escalation',     displayName: 'Escalation', dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'ESCALATING / STABLE / DE-ESCALATING' },
+  // Event — centralBankDecision (aspectId=58)
+  { id: 208, aspectId: 58, typeId: 5, name: 'bank',           displayName: 'Central Bank', dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 Fed、ECB、BOE、BOJ' },
+  { id: 209, aspectId: 58, typeId: 5, name: 'rate_change',    displayName: 'Rate Change',  dataType: 'decimal', isRequired: true,  isMulti: false, isSystem: false, sortOrder: 2, description: '利率变动幅度（bps），如 +25、-50、0' },
+  { id: 210, aspectId: 58, typeId: 5, name: 'tone',           displayName: 'Tone',         dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'HAWKISH / NEUTRAL / DOVISH' },
+  { id: 211, aspectId: 58, typeId: 5, name: 'vote',           displayName: 'Vote',         dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '投票结果，如 7-2' },
+  // Event — marketAnomaly (aspectId=59)
+  { id: 212, aspectId: 59, typeId: 5, name: 'anomaly_type',   displayName: 'Anomaly Type', dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'FLASH_CRASH / LIQUIDITY_CRISIS / SPIKE / GAP' },
+  { id: 213, aspectId: 59, typeId: 5, name: 'trigger_symbol', displayName: 'Trigger',      dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '触发品种，如 GBPUSD' },
+  { id: 214, aspectId: 59, typeId: 5, name: 'price_deviation', displayName: 'Deviation %', dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '价格偏离正常水平的百分比' },
+  { id: 215, aspectId: 59, typeId: 5, name: 'duration_sec',   displayName: 'Duration (s)', dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '异常持续时间（秒）' },
   // Client — clientProfile (aspectId=15)
   { id: 41, aspectId: 15, typeId: 7, name: 'full_name',         displayName: '姓名',       dataType: 'string',  isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1 },
   { id: 65, aspectId: 15, typeId: 7, name: 'email',             displayName: '邮箱',       dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2 },
@@ -299,19 +382,30 @@ const MOCK_PROPERTIES: OntProperty[] = [
   { id: 147,aspectId: 55, typeId: 4,  name: 'host',         displayName: 'Host',       dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1 },
   { id: 148,aspectId: 55, typeId: 4,  name: 'port',         displayName: 'Port',       dataType: 'integer', isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 2 },
   { id: 149,aspectId: 55, typeId: 4,  name: 'webhook_path', displayName: 'Webhook',    dataType: 'string',  isRequired: false, isMulti: false, isSystem: true,  sortOrder: 3, description: '如 /api/v1/alerts 或 Slack incoming webhook URL' },
-  // Action — alertActionInput 入参 (aspectId=56)
-  { id: 150,aspectId: 56, typeId: 4,  name: 'message',   displayName: '消息内容',     dataType: 'string',  isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1 },
-  { id: 151,aspectId: 56, typeId: 4,  name: 'channels',  displayName: '推送渠道',     dataType: 'enum',    isRequired: true,  isMulti: true,  isSystem: false, sortOrder: 2, description: 'EMAIL / SLACK / SMS' },
-  { id: 152,aspectId: 56, typeId: 4,  name: 'severity',  displayName: '严重程度',     dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'HIGH / MEDIUM / LOW' },
-  // Action — alertActionOutput 出参 (aspectId=60)
-  { id: 153,aspectId: 60, typeId: 4,  name: 'sent_count',      displayName: '成功推送数', dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1 },
-  { id: 154,aspectId: 60, typeId: 4,  name: 'failed_channels', displayName: '失败渠道',   dataType: 'string',  isRequired: false, isMulti: true,  isSystem: false, sortOrder: 2 },
+  // Action — alertActionInput 入参 (aspectId=67)
+  { id: 150,aspectId: 67, typeId: 4,  name: 'message',   displayName: '消息内容',     dataType: 'string',  isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1 },
+  { id: 151,aspectId: 67, typeId: 4,  name: 'channels',  displayName: '推送渠道',     dataType: 'enum',    isRequired: true,  isMulti: true,  isSystem: false, sortOrder: 2, description: 'EMAIL / SLACK / SMS' },
+  { id: 152,aspectId: 67, typeId: 4,  name: 'severity',  displayName: '严重程度',     dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'HIGH / MEDIUM / LOW' },
+  // Action — alertActionOutput 出参 (aspectId=68)
+  { id: 153,aspectId: 68, typeId: 4,  name: 'sent_count',      displayName: '成功推送数', dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1 },
+  { id: 154,aspectId: 68, typeId: 4,  name: 'failed_channels', displayName: '失败渠道',   dataType: 'string',  isRequired: false, isMulti: true,  isSystem: false, sortOrder: 2 },
   // Domain — domainInfo (aspectId=21)
-  { id: 59, aspectId: 21, typeId: 2,  name: 'owner',        displayName: 'Owner',          dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 1 },
-  { id: 60, aspectId: 21, typeId: 2,  name: 'description',  displayName: '描述',           dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2 },
+  { id: 59, aspectId: 21, typeId: 2,  name: 'name',         displayName: 'Name',           dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 Trading / Market / Risk' },
+  { id: 60, aspectId: 21, typeId: 2,  name: 'owner',        displayName: 'Owner',          dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2 },
+  { id: 229,aspectId: 21, typeId: 2,  name: 'description',  displayName: '描述',           dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 3 },
   // Container — containerInfo 通用 (aspectId=22)
-  { id: 61, aspectId: 22, typeId: 3,  name: 'description',     displayName: '描述',             dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 1 },
-  { id: 176,aspectId: 22, typeId: 3,  name: 'port',            displayName: 'Port',             dataType: 'integer', isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: '服务端口，仅 gRPC Container 有效，如 50053 / 50054 / 50056' },
+  { id: 228,aspectId: 22, typeId: 3,  name: 'name',         displayName: 'Name',           dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 public / Configurator / oms-output / reports/' },
+  { id: 230,aspectId: 22, typeId: 3,  name: 'description',  displayName: '描述',           dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2 },
+  // Container — dbSchemaInfo (aspectId=62)
+  { id: 217,aspectId: 62, typeId: 3,  name: 'table_count',     displayName: 'Table Count',      dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: 'schema 内的表数量' },
+  { id: 218,aspectId: 62, typeId: 3,  name: 'owner',           displayName: 'Owner',            dataType: 'string',  isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: 'schema 的 DB owner 角色' },
+  // Container — grpcProtoInfo (aspectId=63)
+  { id: 222,aspectId: 63, typeId: 3,  name: 'proto_file',  displayName: 'Proto File',  dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 configurator.proto / trader.proto / strategy_service.proto' },
+  { id: 231,aspectId: 63, typeId: 3,  name: 'port',        displayName: 'Port',        dataType: 'integer', isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 2, description: '如 50053 / 50054 / 50056' },
+  // Container — mqQueueDirInfo (aspectId=64)
+  { id: 225,aspectId: 64, typeId: 3,  name: 'queue_count',     displayName: 'Queue Count',      dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: '目录下的 queue 数量' },
+  // Container — s3PrefixInfo (aspectId=65)
+  { id: 227,aspectId: 65, typeId: 3,  name: 'object_count',    displayName: 'Object Count',     dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: 'prefix 下的对象数量' },
   // Instance — instanceInfo 通用 (aspectId=23)
   { id: 61, aspectId: 23, typeId: 11, name: 'description',     displayName: '描述',             dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 1 },
   { id: 62, aspectId: 23, typeId: 11, name: 'status',          displayName: '状态',             dataType: 'enum',    isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: 'active / maintenance / deprecated' },
@@ -344,10 +438,66 @@ const MOCK_PROPERTIES: OntProperty[] = [
   // Instance — bloombergInstanceInfo (aspectId=30)
   { id: 83, aspectId: 30, typeId: 11, name: 'endpoint',        displayName: 'Endpoint',         dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1 },
   { id: 84, aspectId: 30, typeId: 11, name: 'api_key',         displayName: 'API Key',          dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 2 },
-  // Instance — grpcInstanceInfo (aspectId=61)
-  { id: 172,aspectId: 61, typeId: 11, name: 'host',     displayName: 'Host',     dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 dataservice.internal 或 ECS service DNS' },
-  { id: 174,aspectId: 61, typeId: 11, name: 'tls',      displayName: 'TLS',      dataType: 'boolean', isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: '是否启用 TLS，生产环境建议开启' },
-  { id: 175,aspectId: 61, typeId: 11, name: 'services', displayName: '提供的服务', dataType: 'string',  isRequired: false, isMulti: true,  isSystem: false, sortOrder: 3, description: '该实例提供的 gRPC service 列表，如 Configurator / Trader / StrategyService' },
+  // Instance — grpcServiceInfo (aspectId=61)
+  { id: 172,aspectId: 61, typeId: 11, name: 'host',          displayName: 'Host',          dataType: 'string',  isRequired: true,  isMulti: false, isSystem: true,  sortOrder: 1, description: '如 dataservice.internal 或 ECS service DNS' },
+  { id: 174,aspectId: 61, typeId: 11, name: 'tls',           displayName: 'TLS',           dataType: 'boolean', isRequired: false, isMulti: false, isSystem: true,  sortOrder: 2, description: '是否启用 TLS，生产环境建议开启' },
+  { id: 175,aspectId: 61, typeId: 11, name: 'proto_files',   displayName: 'Proto Files',   dataType: 'string',  isRequired: false, isMulti: true,  isSystem: false, sortOrder: 3, description: '该服务包含的 proto 文件列表，如 configurator.proto / trader.proto' },
+  // Metric — metricInfo (aspectId=70)
+  { id: 232,aspectId: 70, typeId: 12, name: 'category',      displayName: 'Category',      dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'trading / risk / market / operation' },
+  { id: 233,aspectId: 70, typeId: 12, name: 'unit',          displayName: 'Unit',          dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '如 USD / % / pips / lots / count' },
+  { id: 234,aspectId: 70, typeId: 12, name: 'direction',     displayName: 'Direction',     dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: 'higher_better / lower_better / neutral' },
+  { id: 235,aspectId: 70, typeId: 12, name: 'description',   displayName: '描述',          dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 4 },
+  // Metric — metricFormula (aspectId=71)
+  { id: 236,aspectId: 71, typeId: 12, name: 'formula',       displayName: 'Formula',       dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: '计算表达式，如 sum(realized_pnl) + sum(unrealized_pnl)' },
+  { id: 237,aspectId: 71, typeId: 12, name: 'aggregation',   displayName: 'Aggregation',   dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: 'sum / avg / max / min / last / count' },
+  { id: 238,aspectId: 71, typeId: 12, name: 'time_window',   displayName: 'Time Window',   dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '如 1d / 1h / realtime' },
+  // Metric — metricDataSource (aspectId=72)
+  { id: 239,aspectId: 72, typeId: 12, name: 'source_dataset',displayName: 'Source Dataset',dataType: 'ref',     isRequired: false, isMulti: true,  isSystem: false, sortOrder: 1, description: '依赖的数据集，如 account_position / execution_report', refTypeId: 1 },
+  { id: 240,aspectId: 72, typeId: 12, name: 'source_fields', displayName: 'Source Fields', dataType: 'string',  isRequired: false, isMulti: true,  isSystem: false, sortOrder: 2, description: '依赖的字段列表，如 realized_pnl / volume' },
+  // Agent — agentCore (aspectId=80)
+  { id: 300, aspectId: 80, typeId: 20, name: 'agent_type',    displayName: 'Agent 类型',    dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'event_driven / scheduled / manual / streaming' },
+  { id: 301, aspectId: 80, typeId: 20, name: 'llm_model',     displayName: 'LLM 模型',      dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '如 claude-sonnet-4-6 / gpt-4o，无 LLM 调用时留空' },
+  { id: 302, aspectId: 80, typeId: 20, name: 'max_retries',   displayName: '最大重试次数',  dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '单次执行失败后的最大重试次数，默认 2' },
+  { id: 303, aspectId: 80, typeId: 20, name: 'timeout_secs',  displayName: '超时（秒）',    dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '整个 Agent 执行的超时时间' },
+  { id: 304, aspectId: 80, typeId: 20, name: 'status',        displayName: '状态',          dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 5, description: 'active / paused / deprecated' },
+  // Agent — agentRuntime (aspectId=82)
+  { id: 310, aspectId: 82, typeId: 20, name: 'run_count',       displayName: '执行次数',   dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: '累计执行次数' },
+  { id: 311, aspectId: 82, typeId: 20, name: 'success_rate',    displayName: '成功率',     dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '0.00~1.00' },
+  { id: 312, aspectId: 82, typeId: 20, name: 'avg_duration_ms', displayName: '平均耗时',   dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '毫秒' },
+  { id: 313, aspectId: 82, typeId: 20, name: 'last_run_at',     displayName: '最近运行',   dataType: 'datetime',isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '最近一次执行时间' },
+  // Skill — skillCore (aspectId=83)
+  { id: 320, aspectId: 83, typeId: 21, name: 'skill_type',    displayName: 'Skill 类型',    dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'llm / grpc / http / dag / function' },
+  { id: 321, aspectId: 83, typeId: 21, name: 'version',       displayName: '版本',          dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '当前版本号' },
+  { id: 322, aspectId: 83, typeId: 21, name: 'is_async',      displayName: '是否异步',      dataType: 'boolean', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '异步执行时不阻塞后续 Skill' },
+  { id: 323, aspectId: 83, typeId: 21, name: 'timeout_secs',  displayName: '超时（秒）',    dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '单个 Skill 执行超时' },
+  // Tool — toolCore (aspectId=87)
+  { id: 330, aspectId: 87, typeId: 22, name: 'tool_type',     displayName: 'Tool 类型',     dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'mcp / grpc / http / function' },
+  { id: 331, aspectId: 87, typeId: 22, name: 'version',       displayName: '版本',          dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '如 1.0.0' },
+  // Tool — toolConnection (aspectId=88)
+  { id: 332, aspectId: 88, typeId: 22, name: 'endpoint',      displayName: 'Endpoint',      dataType: 'string',  isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'URL 或 host:port' },
+  { id: 333, aspectId: 88, typeId: 22, name: 'auth_type',     displayName: '认证方式',      dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: 'none / api_key / oauth2 / mtls' },
+  { id: 334, aspectId: 88, typeId: 22, name: 'tls',           displayName: 'TLS',           dataType: 'boolean', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '是否启用 TLS' },
+  // EvalRun — evalConfig (aspectId=90)
+  { id: 340, aspectId: 90, typeId: 23, name: 'dataset_name',    displayName: '评估数据集',   dataType: 'string',  isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: '测试用例数据集名称' },
+  { id: 341, aspectId: 90, typeId: 23, name: 'case_count',      displayName: '用例数量',     dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '数据集中的测试用例总数' },
+  // EvalRun — evalMetrics (aspectId=91)
+  { id: 342, aspectId: 91, typeId: 23, name: 'accuracy',        displayName: 'Accuracy',     dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: '0.00~1.00' },
+  { id: 343, aspectId: 91, typeId: 23, name: 'precision',       displayName: 'Precision',    dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: '0.00~1.00' },
+  { id: 344, aspectId: 91, typeId: 23, name: 'recall',          displayName: 'Recall',       dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '0.00~1.00' },
+  { id: 345, aspectId: 91, typeId: 23, name: 'f1',              displayName: 'F1',           dataType: 'decimal', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '0.00~1.00' },
+  { id: 346, aspectId: 91, typeId: 23, name: 'avg_duration_ms', displayName: '平均耗时（ms）',dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 5, description: '所有用例的平均执行耗时' },
+  { id: 347, aspectId: 91, typeId: 23, name: 'avg_token_total', displayName: '平均 Token',   dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 6, description: '所有用例的平均 Token 用量' },
+  // AgentTrace — traceInfo (aspectId=93)
+  { id: 350, aspectId: 93, typeId: 24, name: 'trigger_type',    displayName: '触发类型',     dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 1, description: 'event / schedule / manual / stream' },
+  { id: 351, aspectId: 93, typeId: 24, name: 'status',          displayName: '执行状态',     dataType: 'enum',    isRequired: true,  isMulti: false, isSystem: false, sortOrder: 2, description: 'running / success / failed / timeout' },
+  { id: 352, aspectId: 93, typeId: 24, name: 'duration_ms',     displayName: '总耗时（ms）', dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '从触发到完成的总耗时' },
+  { id: 353, aspectId: 93, typeId: 24, name: 'token_in',        displayName: 'Token In',     dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '所有 LLM 调用的输入 Token 合计' },
+  { id: 354, aspectId: 93, typeId: 24, name: 'token_out',       displayName: 'Token Out',    dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 5, description: '所有 LLM 调用的输出 Token 合计' },
+  // AgentTrace — traceError (aspectId=95)
+  { id: 355, aspectId: 95, typeId: 24, name: 'failed_skill',    displayName: '失败 Skill',   dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 1, description: '导致失败的 Skill 名称' },
+  { id: 356, aspectId: 95, typeId: 24, name: 'error_type',      displayName: '错误类型',     dataType: 'enum',    isRequired: false, isMulti: false, isSystem: false, sortOrder: 2, description: 'timeout / connection / llm_error / logic_error' },
+  { id: 357, aspectId: 95, typeId: 24, name: 'error_message',   displayName: '错误信息',     dataType: 'string',  isRequired: false, isMulti: false, isSystem: false, sortOrder: 3, description: '错误摘要，不含完整堆栈' },
+  { id: 358, aspectId: 95, typeId: 24, name: 'retry_count',     displayName: '重试次数',     dataType: 'integer', isRequired: false, isMulti: false, isSystem: false, sortOrder: 4, description: '实际重试次数' },
 ]
 
 // ── ont_entity_property_value — tags 属性值 ───────────────────────────────────
@@ -923,6 +1073,21 @@ const MOCK_ENTITY_EXTRA: OntEntityExtra[] = [
 
 let extraIdSeq = MOCK_ENTITY_EXTRA.length + 1
 
+const MOCK_FIELD_EXTRA: OntEntityFieldExtra[] = [
+  // account_position.unrealized_pnl (field_id=6)
+  { id: 1, fieldId: 6, key: 'business_definition', value: '按 MTM 估值，每秒刷新',        createdAt: '2025-01-10T00:00:00Z', updatedAt: '2025-01-10T00:00:00Z' },
+  { id: 2, fieldId: 6, key: 'in_reconciliation',   value: 'true',                         createdAt: '2025-01-10T00:00:00Z', updatedAt: '2025-01-10T00:00:00Z' },
+  // account_position.account_id (field_id=2)
+  { id: 3, fieldId: 2, key: 'data_owner',          value: 'trading-ops',                  createdAt: '2025-02-01T00:00:00Z', updatedAt: '2025-02-01T00:00:00Z' },
+  // execution_report.client_email (field_id=57)
+  { id: 4, fieldId: 57, key: 'masking_rule',       value: 'email_mask',                   createdAt: '2025-03-01T00:00:00Z', updatedAt: '2025-03-01T00:00:00Z' },
+  { id: 5, fieldId: 57, key: 'access_policy',      value: 'compliance-team-only',         createdAt: '2025-03-01T00:00:00Z', updatedAt: '2025-03-01T00:00:00Z' },
+  // execution_report.commission (field_id=56)
+  { id: 6, fieldId: 56, key: 'business_definition', value: '含点差和隔夜利息，不含税',   createdAt: '2025-04-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+]
+
+let fieldExtraIdSeq = MOCK_FIELD_EXTRA.length + 1
+
 const MOCK_ENTITY_LINKS: OntEntityLink[] = [
   // 物理归属
   { id: 1,  linkTypeId: 1,  linkTypeName: 'DATASET_IN_CONTAINER',       linkTypeDisplayName: '数据集属于容器',   sourceId: 1,  sourceUrn: 'urn:xs:Dataset:(postgresql,symbol_config,prod)',       sourceName: 'symbol_config',       targetId: 40, targetUrn: 'urn:xs:Container:(internal,config,prod)',              targetName: 'config' },
@@ -1305,10 +1470,10 @@ const MOCK_LINK_TYPES: OntLinkType[] = [
 ]
 
 export const ontologyApi = {
-  getDimensionTypes: () => delay(MOCK_DIMENSION_TYPES),
+  getClassifiers: () => delay(MOCK_CLASSIFIERS),
 
-  getDimensions: (dimensionTypeName?: string) => delay(
-    dimensionTypeName ? MOCK_DIMENSIONS.filter(d => d.dimensionTypeName === dimensionTypeName) : MOCK_DIMENSIONS
+  getClassifierValues: (classifierName?: string) => delay(
+    classifierName ? MOCK_CLASSIFIER_VALUES.filter(d => d.classifierName === classifierName) : MOCK_CLASSIFIER_VALUES
   ),
 
   getLinkTypes: () => delay(MOCK_LINK_TYPES),
@@ -1443,6 +1608,85 @@ export const ontologyApi = {
     return delay({ ...d, tags: getEntityTags(d.id), scale: deriveScale(d.rowCount) })
   },
 
+  getEntityFields: (entityId: number): Promise<OntEntityField[]> => {
+    const MOCK_FIELDS: Record<number, OntEntityField[]> = {
+      // account_position (timescaledb, entityId=1)
+      1: [
+        { id: 1,  entityId: 1, name: 'id',             displayName: 'ID',              dataType: 'bigint',        isNullable: false, isPk: true,  isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 1, description: '主键，自增',                                          distinctCount: 12000,  nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z' },
+        { id: 2,  entityId: 1, name: 'account_id',     displayName: 'Account ID',      dataType: 'varchar(50)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 2, description: '账户 ID，关联 account 表',                             distinctCount: 380,    nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z', tags: ['trading', 'fk'] },
+        { id: 3,  entityId: 1, name: 'symbol',         displayName: 'Symbol',          dataType: 'varchar(20)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 3, description: '交易品种，如 EURUSD、XAUUSD',                          distinctCount: 28,     nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z', tags: ['trading'] },
+        { id: 4,  entityId: 1, name: 'side',           displayName: 'Side',            dataType: 'varchar(4)',    isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 4, description: 'BUY / SELL',                                          distinctCount: 2,      nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z' },
+        { id: 5,  entityId: 1, name: 'volume',         displayName: 'Volume',          dataType: 'decimal(18,5)', isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 5, description: '持仓量（手）',                                         distinctCount: 320,    nullCount: 0,    minValue: '0.01',      maxValue: '500.00',  avgValue: '2.35',   statsUpdatedAt: '2025-05-20T02:00:00Z', tags: ['trading'] },
+        { id: 6,  entityId: 1, name: 'open_price',     displayName: 'Open Price',      dataType: 'decimal(18,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 6, description: '开仓均价',                                             distinctCount: 8420,   nullCount: 12,   minValue: '1.0521',    maxValue: '1.9832',  statsUpdatedAt: '2025-05-20T02:00:00Z' },
+        { id: 7,  entityId: 1, name: 'unrealized_pnl', displayName: 'Unrealized PnL',  dataType: 'decimal(18,2)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 7, description: '浮动盈亏（USD）',                                      distinctCount: 11200,  nullCount: 12,   minValue: '-12500.00', maxValue: '38200.00', avgValue: '420.50', statsUpdatedAt: '2025-05-20T02:00:00Z', tags: ['pnl'] },
+        { id: 8,  entityId: 1, name: 'created_at',     displayName: 'Created At',      dataType: 'timestamptz',   isNullable: false, isPk: false, isIndexed: false, isPartitionKey: true,  isPii: false, sortOrder: 8, description: '创建时间，hypertable 分区键',                          distinctCount: 12000,  nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z' },
+        { id: 9,  entityId: 1, name: 'updated_at',     displayName: 'Updated At',      dataType: 'timestamptz',   isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 9, description: '最后更新时间',                                         distinctCount: 12000,  nullCount: 0,    statsUpdatedAt: '2025-05-20T02:00:00Z' },
+      ],
+      // spread_metrics (timescaledb, entityId=2)
+      2: [
+        { id: 10, entityId: 2, name: 'id',          displayName: 'ID',          dataType: 'bigint',        isNullable: false, isPk: true,  isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 1, description: '主键',                          distinctCount: 5000000, nullCount: 0,  statsUpdatedAt: '2025-05-20T03:00:00Z' },
+        { id: 11, entityId: 2, name: 'symbol',      displayName: 'Symbol',      dataType: 'varchar(20)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 2, description: '品种',                          distinctCount: 28,      nullCount: 0,  statsUpdatedAt: '2025-05-20T03:00:00Z', tags: ['trading'] },
+        { id: 12, entityId: 2, name: 'bid_spread',  displayName: 'Bid Spread',  dataType: 'decimal(10,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 3, description: 'Bid 点差（pips）',              distinctCount: 1240,    nullCount: 320, minValue: '0.1', maxValue: '8.5',  avgValue: '1.2', statsUpdatedAt: '2025-05-20T03:00:00Z', tags: ['spread', 'market'] },
+        { id: 13, entityId: 2, name: 'ask_spread',  displayName: 'Ask Spread',  dataType: 'decimal(10,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 4, description: 'Ask 点差（pips）',              distinctCount: 1380,    nullCount: 320, minValue: '0.1', maxValue: '9.0',  avgValue: '1.3', statsUpdatedAt: '2025-05-20T03:00:00Z', tags: ['spread', 'market'] },
+        { id: 14, entityId: 2, name: 'mid_price',   displayName: 'Mid Price',   dataType: 'decimal(18,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 5, description: '中间价',                        distinctCount: 4800000, nullCount: 0,  minValue: '0.6521', maxValue: '2.1043', statsUpdatedAt: '2025-05-20T03:00:00Z' },
+        { id: 15, entityId: 2, name: 'lp_count',    displayName: 'LP Count',    dataType: 'smallint',      isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 6, description: '参与报价的 LP 数量',            distinctCount: 8,       nullCount: 0,  minValue: '1',  maxValue: '8',    avgValue: '5.2', statsUpdatedAt: '2025-05-20T03:00:00Z' },
+        { id: 16, entityId: 2, name: 'created_at',  displayName: 'Created At',  dataType: 'timestamptz',   isNullable: false, isPk: false, isIndexed: false, isPartitionKey: true,  isPii: false, sortOrder: 7, description: '记录时间，hypertable 分区键',   distinctCount: 5000000, nullCount: 0,  statsUpdatedAt: '2025-05-20T03:00:00Z' },
+      ],
+      // ladder (timescaledb, entityId=3)
+      3: [
+        { id: 20, entityId: 3, name: 'id',         displayName: 'ID',         dataType: 'bigint',        isNullable: false, isPk: true,  isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 1, description: '主键',                        distinctCount: 80000000, nullCount: 0, statsUpdatedAt: '2025-05-20T04:00:00Z' },
+        { id: 21, entityId: 3, name: 'symbol',     displayName: 'Symbol',     dataType: 'varchar(20)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 2, description: '品种',                        distinctCount: 28,       nullCount: 0, statsUpdatedAt: '2025-05-20T04:00:00Z', tags: ['trading'] },
+        { id: 22, entityId: 3, name: 'lp_id',      displayName: 'LP ID',      dataType: 'varchar(50)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 3, description: 'LP 标识',                     distinctCount: 12,       nullCount: 0, statsUpdatedAt: '2025-05-20T04:00:00Z', tags: ['lp'] },
+        { id: 23, entityId: 3, name: 'bid',        displayName: 'Bid',        dataType: 'decimal(18,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 4, description: 'Bid 价格',                    distinctCount: 72000000, nullCount: 0, minValue: '0.6501', maxValue: '2.1050', statsUpdatedAt: '2025-05-20T04:00:00Z', tags: ['market'] },
+        { id: 24, entityId: 3, name: 'ask',        displayName: 'Ask',        dataType: 'decimal(18,5)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 5, description: 'Ask 价格',                    distinctCount: 72000000, nullCount: 0, minValue: '0.6502', maxValue: '2.1055', statsUpdatedAt: '2025-05-20T04:00:00Z', tags: ['market'] },
+        { id: 25, entityId: 3, name: 'volume',     displayName: 'Volume',     dataType: 'decimal(18,2)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 6, description: '报价量（百万）',               distinctCount: 850,      nullCount: 0, minValue: '0.1', maxValue: '50.0', avgValue: '5.2', statsUpdatedAt: '2025-05-20T04:00:00Z' },
+        { id: 26, entityId: 3, name: 'tier',       displayName: 'Tier',       dataType: 'smallint',      isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 7, description: '报价档位，1=最优',             distinctCount: 5,        nullCount: 0, statsUpdatedAt: '2025-05-20T04:00:00Z' },
+        { id: 27, entityId: 3, name: 'created_at', displayName: 'Created At', dataType: 'timestamptz',   isNullable: false, isPk: false, isIndexed: false, isPartitionKey: true,  isPii: false, sortOrder: 8, description: '报价时间，hypertable 分区键',  distinctCount: 80000000, nullCount: 0, statsUpdatedAt: '2025-05-20T04:00:00Z' },
+      ],
+      // execution_report (mq, entityId=8)
+      8: [
+        { id: 50, entityId: 8, name: 'order_id',     displayName: 'Order ID',     dataType: 'varchar(50)',   isNullable: false, isPk: true,  isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 1, description: '订单 ID，全局唯一',                                    distinctCount: 420000, nullCount: 0,   statsUpdatedAt: '2025-05-20T05:00:00Z' },
+        { id: 51, entityId: 8, name: 'account_id',   displayName: 'Account ID',   dataType: 'varchar(50)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 2, description: '账户 ID',                                              distinctCount: 380,    nullCount: 0,   statsUpdatedAt: '2025-05-20T05:00:00Z', tags: ['trading', 'fk'] },
+        { id: 52, entityId: 8, name: 'symbol',       displayName: 'Symbol',       dataType: 'varchar(20)',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 3, description: '品种',                                                 distinctCount: 28,     nullCount: 0,   statsUpdatedAt: '2025-05-20T05:00:00Z', tags: ['trading'] },
+        { id: 53, entityId: 8, name: 'side',         displayName: 'Side',         dataType: 'varchar(4)',    isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 4, description: 'BUY / SELL',                                           distinctCount: 2,      nullCount: 0,   statsUpdatedAt: '2025-05-20T05:00:00Z' },
+        { id: 54, entityId: 8, name: 'volume',       displayName: 'Volume',       dataType: 'decimal(18,5)', isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 5, description: '成交量（手）',                                         distinctCount: 1200,   nullCount: 0,   minValue: '0.01', maxValue: '200.00', avgValue: '1.85', statsUpdatedAt: '2025-05-20T05:00:00Z', tags: ['trading'] },
+        { id: 55, entityId: 8, name: 'price',        displayName: 'Price',        dataType: 'decimal(18,5)', isNullable: false, isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 6, description: '成交价格',                                             distinctCount: 380000, nullCount: 0,   minValue: '0.6501', maxValue: '2.1055', statsUpdatedAt: '2025-05-20T05:00:00Z', tags: ['market'] },
+        { id: 56, entityId: 8, name: 'commission',   displayName: 'Commission',   dataType: 'decimal(10,2)', isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: false, sortOrder: 7, description: '手续费（USD），含点差和隔夜利息',                       distinctCount: 850,    nullCount: 120, minValue: '0.00', maxValue: '320.00', avgValue: '4.20', statsUpdatedAt: '2025-05-20T05:00:00Z' },
+        { id: 57, entityId: 8, name: 'client_email', displayName: 'Client Email', dataType: 'varchar(200)',  isNullable: true,  isPk: false, isIndexed: false, isPartitionKey: false, isPii: true,  sortOrder: 8, description: '客户邮箱，PII 字段，需脱敏',                           distinctCount: 380,    nullCount: 40,  statsUpdatedAt: '2025-05-20T05:00:00Z', sensitivityLevel: 'confidential' },
+        { id: 58, entityId: 8, name: 'executed_at',  displayName: 'Executed At',  dataType: 'timestamptz',   isNullable: false, isPk: false, isIndexed: true,  isPartitionKey: false, isPii: false, sortOrder: 9, description: '成交时间',                                             distinctCount: 420000, nullCount: 0,   statsUpdatedAt: '2025-05-20T05:00:00Z' },
+      ],
+    }
+    return delay(MOCK_FIELDS[entityId] ?? [])
+  },
+
+  // ── ont_entity_field_extra ────────────────────────────────────────────────
+
+  getFieldExtra: (fieldId: number): Promise<OntEntityFieldExtra[]> => {
+    return delay(MOCK_FIELD_EXTRA.filter(e => e.fieldId === fieldId))
+  },
+
+  upsertFieldExtra: (fieldId: number, key: string, value: string): Promise<OntEntityFieldExtra> => {
+    const existing = MOCK_FIELD_EXTRA.find(e => e.fieldId === fieldId && e.key === key)
+    if (existing) {
+      existing.value = value
+      existing.updatedAt = new Date().toISOString()
+      return delay(existing)
+    }
+    const item: OntEntityFieldExtra = {
+      id: fieldExtraIdSeq++, fieldId, key, value,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    MOCK_FIELD_EXTRA.push(item)
+    return delay(item)
+  },
+
+  deleteFieldExtra: (id: number): Promise<void> => {
+    const idx = MOCK_FIELD_EXTRA.findIndex(e => e.id === id)
+    if (idx !== -1) MOCK_FIELD_EXTRA.splice(idx, 1)
+    return delay(undefined)
+  },
+
   // 全量统计，不受过滤条件影响
   getDatasetStats: (): Promise<{ total: number; byDomain: Record<string, number>; byPlatform: Record<string, number> }> => {
     const byDomain: Record<string, number> = {}
@@ -1478,5 +1722,276 @@ export const ontologyApi = {
         matchScore: 1,
       }))
     return delay({ items: results, total: results.length, page: 1, pageSize: 20 })
+  },
+}
+
+// ── Agent Studio Mock 数据 & API ──────────────────────────────────────────────
+
+const MOCK_SKILLS: OntSkill[] = [
+  { id: 1, name: 'analyze_impact',       displayName: 'Analyze Impact',       skillType: 'llm',      version: 2, isAsync: false, timeoutSecs: 30,  toolName: undefined,          description: '调用 LLM 分析市场事件对品种的影响方向和置信度', createdAt: '2025-01-10T00:00:00Z' },
+  { id: 2, name: 'query_positions',      displayName: 'Query Positions',      skillType: 'grpc',     version: 1, isAsync: false, timeoutSecs: 10,  toolName: 'grpc-dataservice',  description: '通过 gRPC 查询账户持仓和浮动盈亏',               createdAt: '2025-01-10T00:00:00Z' },
+  { id: 3, name: 'check_risk_limits',    displayName: 'Check Risk Limits',    skillType: 'grpc',     version: 1, isAsync: false, timeoutSecs: 10,  toolName: 'grpc-dataservice',  description: '检查账户持仓是否超过风控阈值',                   createdAt: '2025-01-10T00:00:00Z' },
+  { id: 4, name: 'send_alert',           displayName: 'Send Alert',           skillType: 'http',     version: 1, isAsync: true,  timeoutSecs: 5,   toolName: 'alert-webhook',     description: '向 Slack / 邮件推送预警通知',                   createdAt: '2025-01-10T00:00:00Z' },
+  { id: 5, name: 'generate_report',      displayName: 'Generate Report',      skillType: 'dag',      version: 1, isAsync: true,  timeoutSecs: 120, toolName: 'airflow-dag-runner',description: '触发 Airflow DAG 生成分析报告',                  createdAt: '2025-01-10T00:00:00Z' },
+  { id: 6, name: 'query_spread_metrics', displayName: 'Query Spread Metrics', skillType: 'grpc',     version: 1, isAsync: false, timeoutSecs: 10,  toolName: 'grpc-dataservice',  description: '查询品种点差统计数据',                           createdAt: '2025-02-01T00:00:00Z' },
+  { id: 7, name: 'analyze_liquidity',    displayName: 'Analyze Liquidity',    skillType: 'llm',      version: 1, isAsync: false, timeoutSecs: 30,  toolName: undefined,           description: '分析流动性状况，推荐参数调整',                   createdAt: '2025-02-01T00:00:00Z' },
+  { id: 8, name: 'update_symbol_config', displayName: 'Update Symbol Config', skillType: 'grpc',     version: 1, isAsync: false, timeoutSecs: 10,  toolName: 'grpc-configurator', description: '调用 gRPC 更新品种配置参数',                     createdAt: '2025-02-01T00:00:00Z' },
+]
+
+const MOCK_TOOLS: OntTool[] = [
+  { id: 1, name: 'grpc-dataservice',   displayName: 'gRPC DataService',   toolType: 'grpc', endpoint: 'dataservice.internal:50053', authType: 'mtls',    tls: true,  description: '内部 gRPC DataService，提供持仓、点差、配置查询', createdAt: '2025-01-10T00:00:00Z' },
+  { id: 2, name: 'grpc-configurator',  displayName: 'gRPC Configurator',  toolType: 'grpc', endpoint: 'dataservice.internal:50053', authType: 'mtls',    tls: true,  description: '内部 gRPC Configurator，提供品种配置读写',       createdAt: '2025-01-10T00:00:00Z' },
+  { id: 3, name: 'airflow-dag-runner', displayName: 'Airflow DAG Runner', toolType: 'http', endpoint: 'airflow.internal:8080',      authType: 'api_key', tls: false, description: 'Airflow REST API，触发 DAG 执行报告生成',        createdAt: '2025-01-10T00:00:00Z' },
+  { id: 4, name: 'alert-webhook',      displayName: 'Alert Webhook',      toolType: 'http', endpoint: 'alerts.internal/api/v1',     authType: 'api_key', tls: true,  description: '预警推送 Webhook，支持 Slack / 邮件 / SMS',      createdAt: '2025-01-10T00:00:00Z' },
+]
+
+const MOCK_AGENTS: OntAgent[] = [
+  {
+    id: 1, name: 'market-event-analyst', displayName: 'Market Event Analyst',
+    description: '接收市场事件，调用 LLM 分析影响范围，生成影响报告并触发风控预警',
+    agentType: 'event_driven', status: 'active', env: 'prod', version: 3,
+    llmModel: 'claude-sonnet-4-6', maxRetries: 2, timeoutSecs: 120,
+    skills: [
+      { name: 'analyze_impact',  sortOrder: 1 },
+      { name: 'query_positions', sortOrder: 2 },
+      { name: 'send_alert',      sortOrder: 3 },
+      { name: 'generate_report', sortOrder: 4 },
+    ],
+    tools: ['grpc-dataservice', 'airflow-dag-runner', 'alert-webhook'],
+    runCount: 128, successRate: 0.96, avgDurationMs: 3420, lastRunAt: '2026-05-26T14:32:00Z',
+    eventTypes: ['macro', 'geopolitical', 'central_bank'], minSeverity: 'MEDIUM',
+    createdAt: '2025-01-10T00:00:00Z', updatedAt: '2026-05-20T00:00:00Z',
+  },
+  {
+    id: 2, name: 'position-risk-monitor', displayName: 'Position Risk Monitor',
+    description: '定时扫描账户持仓，检测超限风险，自动触发风控操作或人工审核',
+    agentType: 'scheduled', status: 'active', env: 'prod', version: 2,
+    maxRetries: 1, timeoutSecs: 60,
+    skills: [
+      { name: 'query_positions',   sortOrder: 1 },
+      { name: 'check_risk_limits', sortOrder: 2 },
+      { name: 'send_alert',        sortOrder: 3 },
+    ],
+    tools: ['grpc-dataservice', 'alert-webhook'],
+    runCount: 480, successRate: 0.99, avgDurationMs: 520, lastRunAt: '2026-05-26T15:00:00Z',
+    cronExpr: '0 * * * *',
+    createdAt: '2025-02-01T00:00:00Z', updatedAt: '2026-04-01T00:00:00Z',
+  },
+  {
+    id: 3, name: 'pnl-report-generator', displayName: 'PnL Report Generator',
+    description: '每日收盘后汇总账户盈亏，生成 PnL 报告并发送邮件',
+    agentType: 'scheduled', status: 'active', env: 'prod', version: 1,
+    maxRetries: 2, timeoutSecs: 300,
+    skills: [
+      { name: 'query_positions', sortOrder: 1 },
+      { name: 'generate_report', sortOrder: 2 },
+      { name: 'send_alert',      sortOrder: 3 },
+    ],
+    tools: ['grpc-dataservice', 'airflow-dag-runner'],
+    runCount: 62, successRate: 1.0, avgDurationMs: 8200, lastRunAt: '2026-05-25T18:05:00Z',
+    cronExpr: '5 18 * * 1-5',
+    createdAt: '2025-03-01T00:00:00Z', updatedAt: '2026-03-01T00:00:00Z',
+  },
+  {
+    id: 4, name: 'symbol-config-advisor', displayName: 'Symbol Config Advisor',
+    description: '分析品种点差和流动性，推荐 markup 参数调整方案，等待 Dealer 确认后执行',
+    agentType: 'manual', status: 'paused', env: 'uat', version: 1,
+    llmModel: 'claude-sonnet-4-6', maxRetries: 1, timeoutSecs: 60,
+    skills: [
+      { name: 'query_spread_metrics', sortOrder: 1 },
+      { name: 'analyze_liquidity',    sortOrder: 2 },
+      { name: 'update_symbol_config', sortOrder: 3 },
+    ],
+    tools: ['grpc-dataservice', 'grpc-configurator'],
+    runCount: 8, successRate: 0.875, avgDurationMs: 5200, lastRunAt: '2026-05-20T10:15:00Z',
+    createdAt: '2025-04-01T00:00:00Z', updatedAt: '2026-05-01T00:00:00Z',
+  },
+]
+
+const MOCK_TRACES: OntAgentTrace[] = [
+  {
+    id: 'trace-001', agentId: 1, agentName: 'Market Event Analyst',
+    triggerType: 'event', triggerRef: 'urn:evo:MarketEvent:(macro,fed-rate-2026-05,prod)',
+    status: 'success', durationMs: 3420, tokenIn: 1240, tokenOut: 380, stepCount: 4,
+    runAt: '2026-05-26T14:32:05Z',
+    steps: [
+      { skill: 'analyze_impact',  skillType: 'llm',  status: 'success', durationMs: 2100, tokenIn: 1240, tokenOut: 380 },
+      { skill: 'query_positions', skillType: 'grpc', status: 'success', durationMs: 180  },
+      { skill: 'send_alert',      skillType: 'http', status: 'success', durationMs: 95   },
+      { skill: 'generate_report', skillType: 'dag',  status: 'success', durationMs: 1045 },
+    ],
+  },
+  {
+    id: 'trace-002', agentId: 2, agentName: 'Position Risk Monitor',
+    triggerType: 'schedule', triggerRef: '0 * * * * (hourly)',
+    status: 'success', durationMs: 520, tokenIn: 0, tokenOut: 0, stepCount: 3,
+    runAt: '2026-05-26T15:00:01Z',
+    steps: [
+      { skill: 'query_positions',   skillType: 'grpc', status: 'success', durationMs: 210 },
+      { skill: 'check_risk_limits', skillType: 'grpc', status: 'success', durationMs: 180 },
+      { skill: 'send_alert',        skillType: 'http', status: 'success', durationMs: 130 },
+    ],
+  },
+  {
+    id: 'trace-003', agentId: 1, agentName: 'Market Event Analyst',
+    triggerType: 'event', triggerRef: 'urn:evo:MarketEvent:(geopolitical,tension-2026-05-26,prod)',
+    status: 'failed', durationMs: 1850, tokenIn: 980, tokenOut: 0, stepCount: 2,
+    runAt: '2026-05-26T11:15:22Z',
+    steps: [
+      { skill: 'analyze_impact',  skillType: 'llm',  status: 'success', durationMs: 1820 },
+      { skill: 'query_positions', skillType: 'grpc', status: 'failed',  durationMs: 30, error: 'Connection timeout' },
+    ],
+  },
+  {
+    id: 'trace-004', agentId: 3, agentName: 'PnL Report Generator',
+    triggerType: 'schedule', triggerRef: '5 18 * * 1-5',
+    status: 'success', durationMs: 8200, tokenIn: 0, tokenOut: 0, stepCount: 3,
+    runAt: '2026-05-25T18:05:00Z',
+    steps: [
+      { skill: 'query_positions', skillType: 'grpc', status: 'success', durationMs: 320  },
+      { skill: 'generate_report', skillType: 'dag',  status: 'success', durationMs: 7880 },
+      { skill: 'send_alert',      skillType: 'http', status: 'success', durationMs: 0    },
+    ],
+  },
+  {
+    id: 'trace-005', agentId: 2, agentName: 'Position Risk Monitor',
+    triggerType: 'schedule', triggerRef: '0 * * * * (hourly)',
+    status: 'success', durationMs: 490, tokenIn: 0, tokenOut: 0, stepCount: 3,
+    runAt: '2026-05-26T14:00:01Z',
+    steps: [
+      { skill: 'query_positions',   skillType: 'grpc', status: 'success', durationMs: 195 },
+      { skill: 'check_risk_limits', skillType: 'grpc', status: 'success', durationMs: 165 },
+      { skill: 'send_alert',        skillType: 'http', status: 'success', durationMs: 130 },
+    ],
+  },
+]
+
+const MOCK_EVAL_RUNS: OntEvalRun[] = [
+  {
+    id: 'eval-001', agentId: 1, agentName: 'Market Event Analyst',
+    datasetName: 'market-events-q1-2026', caseCount: 50,
+    accuracy: 0.88, precision: 0.91, recall: 0.85, f1: 0.88,
+    avgDurationMs: 3100, avgTokenTotal: 1580, status: 'done', runAt: '2026-05-24T10:00:00Z',
+  },
+  {
+    id: 'eval-002', agentId: 1, agentName: 'Market Event Analyst',
+    datasetName: 'market-events-q1-2026', caseCount: 50,
+    accuracy: 0.82, precision: 0.85, recall: 0.80, f1: 0.82,
+    avgDurationMs: 3400, avgTokenTotal: 1620, status: 'done', runAt: '2026-05-20T10:00:00Z',
+  },
+  {
+    id: 'eval-003', agentId: 4, agentName: 'Symbol Config Advisor',
+    datasetName: 'symbol-config-cases-v1', caseCount: 20,
+    accuracy: 0.75, precision: 0.78, recall: 0.72, f1: 0.75,
+    avgDurationMs: 5200, avgTokenTotal: 2100, status: 'done', runAt: '2026-05-18T14:00:00Z',
+  },
+]
+
+export const agentApi = {
+  getAgents:  (): Promise<OntAgent[]>      => delay(MOCK_AGENTS),
+  getAgent:   (id: number): Promise<OntAgent | undefined> => delay(MOCK_AGENTS.find(a => a.id === id)),
+  getSkills:  (): Promise<OntSkill[]>      => delay(MOCK_SKILLS),
+  getTools:   (): Promise<OntTool[]>       => delay(MOCK_TOOLS),
+  getTraces:  (agentId?: number): Promise<OntAgentTrace[]> =>
+    delay(agentId ? MOCK_TRACES.filter(t => t.agentId === agentId) : MOCK_TRACES),
+  getEvalRuns:(agentId?: number): Promise<OntEvalRun[]> =>
+    delay(agentId ? MOCK_EVAL_RUNS.filter(e => e.agentId === agentId) : MOCK_EVAL_RUNS),
+}
+
+// ── Pipeline mock data ────────────────────────────────────────────────────────
+
+const MOCK_PIPELINES: OntPipeline[] = [
+  {
+    id: 1, name: 'market-event-analyst-pipeline', displayName: 'Market Event Analyst Pipeline',
+    description: '监听市场事件，自动分析影响并生成归因报告',
+    status: 'published', currentStage: 'run', env: 'prod', version: 3,
+    assembly: {
+      agentId: 1, agentName: 'Market Event Analyst',
+      skillNames: ['fetch_market_data', 'analyze_impact', 'generate_report', 'send_alert'],
+      toolNames: ['xsyphon-grpc', 'xsyphon-mcp'],
+      llmModel: 'claude-sonnet-4-6',
+      datasetUrns: ['urn:evo:dataset:(timescaledb,spread_metrics,prod)', 'urn:evo:dataset:(timescaledb,ladder,prod)'],
+      triggerType: 'event', eventTypes: ['FLASH_CRASH', 'SPREAD_SPIKE', 'LIQUIDITY_DROP'],
+    },
+    rbac: { owners: ['songliu', 'alice'], operators: ['songliu', 'alice', 'bob'], viewers: ['*'], requireApproval: true, approvers: ['songliu'] },
+    budget: { maxTokensPerRun: 8000, maxTokensPerDay: 200000, maxRunsPerDay: 50, maxCostUsdPerDay: 10, alertThresholdPct: 80 },
+    testCases: [
+      { id: 'tc-001', input: '{"eventType":"FLASH_CRASH","symbol":"EURUSD","severity":"HIGH"}', expectedOutput: 'Report generated', actualOutput: 'Report generated', status: 'pass', durationMs: 3200, tokenUsed: 1540 },
+      { id: 'tc-002', input: '{"eventType":"SPREAD_SPIKE","symbol":"GBPUSD","severity":"MEDIUM"}', expectedOutput: 'Alert sent', actualOutput: 'Alert sent', status: 'pass', durationMs: 2800, tokenUsed: 1320 },
+      { id: 'tc-003', input: '{"eventType":"LIQUIDITY_DROP","symbol":"USDJPY","severity":"LOW"}', expectedOutput: 'Report generated', actualOutput: undefined, status: 'pending' },
+    ],
+    runCount: 142, successRate: 0.97, lastRunAt: '2026-05-26T15:30:00Z',
+    publishedAt: '2026-05-01T09:00:00Z', publishedBy: 'songliu',
+    createdBy: 'songliu', createdAt: '2026-04-20T10:00:00Z', updatedAt: '2026-05-26T15:30:00Z',
+  },
+  {
+    id: 2, name: 'position-risk-monitor-pipeline', displayName: 'Position Risk Monitor Pipeline',
+    description: '定时检查持仓风险，超限自动告警',
+    status: 'running', currentStage: 'monitor', env: 'prod', version: 2,
+    assembly: {
+      agentId: 2, agentName: 'Position Risk Monitor',
+      skillNames: ['query_positions', 'check_risk_limits', 'send_alert'],
+      toolNames: ['xsyphon-grpc'],
+      datasetUrns: ['urn:evo:dataset:(timescaledb,account_position,prod)'],
+      triggerType: 'schedule', cronExpr: '0 * * * *',
+    },
+    rbac: { owners: ['songliu'], operators: ['songliu', 'alice'], viewers: ['bob'], requireApproval: false, approvers: [] },
+    budget: { maxTokensPerRun: 0, maxTokensPerDay: 0, maxRunsPerDay: 24, maxCostUsdPerDay: 0, alertThresholdPct: 90 },
+    testCases: [
+      { id: 'tc-101', input: '{"accountId":"ACC001","checkType":"FULL"}', expectedOutput: 'Risk OK', actualOutput: 'Risk OK', status: 'pass', durationMs: 490, tokenUsed: 0 },
+    ],
+    runCount: 720, successRate: 0.99, lastRunAt: '2026-05-27T08:00:00Z',
+    publishedAt: '2026-04-15T12:00:00Z', publishedBy: 'songliu',
+    createdBy: 'songliu', createdAt: '2026-04-10T09:00:00Z', updatedAt: '2026-05-27T08:00:00Z',
+  },
+  {
+    id: 3, name: 'pnl-report-generator-pipeline', displayName: 'PnL Report Generator Pipeline',
+    description: '每日收盘后生成 PnL 报告并发送邮件',
+    status: 'testing', currentStage: 'test', env: 'uat', version: 1,
+    assembly: {
+      agentId: 3, agentName: 'PnL Report Generator',
+      skillNames: ['query_positions', 'generate_report', 'send_alert'],
+      toolNames: ['xsyphon-grpc', 'email-gateway'],
+      llmModel: 'claude-haiku-4-5',
+      datasetUrns: ['urn:evo:dataset:(timescaledb,account_position,uat)', 'urn:evo:dataset:(timescaledb,execution_report,uat)'],
+      triggerType: 'schedule', cronExpr: '5 18 * * 1-5',
+    },
+    rbac: { owners: ['songliu', 'bob'], operators: ['songliu', 'bob'], viewers: ['alice'], requireApproval: true, approvers: ['songliu'] },
+    budget: { maxTokensPerRun: 5000, maxTokensPerDay: 50000, maxRunsPerDay: 5, maxCostUsdPerDay: 2, alertThresholdPct: 75 },
+    testCases: [
+      { id: 'tc-201', input: '{"date":"2026-05-23","accounts":["ACC001","ACC002"]}', expectedOutput: 'Report emailed', actualOutput: 'Report emailed', status: 'pass', durationMs: 8200, tokenUsed: 2100 },
+      { id: 'tc-202', input: '{"date":"2026-05-22","accounts":["ACC003"]}', expectedOutput: 'Report emailed', actualOutput: 'Connection timeout', status: 'fail', durationMs: 30000, tokenUsed: 800 },
+      { id: 'tc-203', input: '{"date":"2026-05-21","accounts":["ACC001"]}', expectedOutput: 'Report emailed', actualOutput: undefined, status: 'pending' },
+    ],
+    runCount: 8, successRate: 0.875, lastRunAt: '2026-05-23T18:05:00Z',
+    createdBy: 'bob', createdAt: '2026-05-10T14:00:00Z', updatedAt: '2026-05-23T18:05:00Z',
+  },
+  {
+    id: 4, name: 'symbol-config-advisor-pipeline', displayName: 'Symbol Config Advisor Pipeline',
+    description: '根据市场状况智能推荐 Symbol 配置调整',
+    status: 'draft', currentStage: 'assembly', env: 'dev', version: 1,
+    assembly: {
+      agentId: 4, agentName: 'Symbol Config Advisor',
+      skillNames: ['fetch_market_data', 'analyze_impact'],
+      toolNames: ['xsyphon-grpc', 'xsyphon-mcp'],
+      llmModel: 'claude-opus-4-7',
+      datasetUrns: ['urn:evo:dataset:(timescaledb,spread_metrics,dev)'],
+      triggerType: 'manual',
+    },
+    rbac: { owners: ['alice'], operators: ['alice'], viewers: [], requireApproval: false, approvers: [] },
+    budget: { maxTokensPerRun: 20000, maxTokensPerDay: 100000, maxRunsPerDay: 10, maxCostUsdPerDay: 5, alertThresholdPct: 70 },
+    testCases: [],
+    runCount: 0, successRate: 0,
+    createdBy: 'alice', createdAt: '2026-05-25T11:00:00Z', updatedAt: '2026-05-25T11:00:00Z',
+  },
+]
+
+export const pipelineApi = {
+  getPipelines:   (): Promise<OntPipeline[]>                          => delay(MOCK_PIPELINES),
+  getPipeline:    (id: number): Promise<OntPipeline | undefined>      => delay(MOCK_PIPELINES.find(p => p.id === id)),
+  updatePipeline: (id: number, patch: Partial<OntPipeline>): Promise<OntPipeline> => {
+    const idx = MOCK_PIPELINES.findIndex(p => p.id === id)
+    if (idx >= 0) Object.assign(MOCK_PIPELINES[idx], patch)
+    return delay(MOCK_PIPELINES[idx])
   },
 }
